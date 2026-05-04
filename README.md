@@ -115,13 +115,12 @@ Untuk file runtime seperti log dan cache.
 
 Dipakai untuk memastikan backend hidup.
 
-### Auth Placeholder
+### Swagger / OpenAPI Docs
 
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `GET /api/auth/me`
+- `GET /swagger`
+- `GET /swagger/openapi.json`
 
-Endpoint ini belum mengimplementasikan JWT. Ini hanya kontrak awal supaya struktur auth sudah siap dikembangkan.
+Dokumentasi API disajikan lewat Swagger UI, dengan definisi OpenAPI disimpan terpisah di folder `docs/openapi`.
 
 ## Setup Lokal
 
@@ -156,13 +155,21 @@ composer serve
 Atau langsung:
 
 ```bash
-php -S localhost:8000 -t public
+php -S localhost:8000 -t public router.php
 ```
+
+Catatan: gunakan `router.php` saat memakai PHP built-in server supaya semua endpoint API dan Swagger seperti `/swagger/openapi.json` tetap diarahkan ke front controller.
 
 ### 5. Cek health endpoint
 
 ```bash
 curl http://localhost:8000/api/health
+```
+
+### 6. Buka dokumentasi API
+
+```bash
+http://localhost:8000/swagger
 ```
 
 ## Workflow Pengembangan
@@ -210,15 +217,6 @@ src/Modules/Users/
 ```
 
 Tidak perlu semua folder dibuat dari awal. Tambahkan saat memang dibutuhkan.
-
-## Catatan Auth
-
-Project ini sudah diarahkan ke JWT melalui `config/auth.php` dan env:
-- `AUTH_DRIVER=jwt`
-- `JWT_SECRET`
-- `JWT_TTL`
-
-Tapi implementasi login, register, token issue, token verify, refresh token, dan middleware auth belum dibuat. Ini sengaja supaya fase init tetap ringan.
 
 ## Catatan Frontend Integration
 

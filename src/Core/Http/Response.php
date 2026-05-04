@@ -22,6 +22,11 @@ final class Response
         );
     }
 
+    public static function make(string $content, int $status = 200, array $headers = []): self
+    {
+        return new self($content, $status, $headers);
+    }
+
     public function withHeader(string $name, string $value): self
     {
         $headers = $this->headers;

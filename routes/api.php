@@ -3,14 +3,12 @@
 declare(strict_types=1);
 
 use App\Core\Routing\Router;
-use App\Modules\Auth\Controllers\AuthController;
+use App\Modules\Docs\Controllers\DocsController;
 use App\Modules\Health\Controllers\HealthController;
 
 return static function (Router $router): void {
-    $router->get('/api/health', [HealthController::class, 'index']);
+    $router->get('/swagger', [DocsController::class, 'ui']);
+    $router->get('/swagger/openapi.json', [DocsController::class, 'spec']);
 
-    // Auth route placeholders for future JWT implementation.
-    $router->post('/api/auth/register', [AuthController::class, 'register']);
-    $router->post('/api/auth/login', [AuthController::class, 'login']);
-    $router->get('/api/auth/me', [AuthController::class, 'me']);
+    $router->get('/api/health', [HealthController::class, 'index']);
 };
