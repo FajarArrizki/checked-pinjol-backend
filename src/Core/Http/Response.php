@@ -4,45 +4,105 @@ declare(strict_types=1);
 
 namespace App\Core\Http;
 
-final class Response
+class Response
 {
+    /**
+     * Constructor dengan nilai default agar fleksibel saat diinstansiasi di Router.
+     */
     public function __construct(
-        private readonly string $content,
-        private readonly int $status = 200,
-        private readonly array $headers = [],
+        private string $content = '',
+        private int $statusCode = 200,
+        private array $headers = []
     ) {
     }
 
-    public static function json(array $data, int $status = 200, array $headers = []): self
+    /**
+     * Mengambil status code (digunakan oleh Router untuk validasi middleware).
+     */
+    public function getStatus(): int
     {
-        return new self(
-            (string) json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
-            $status,
-            array_merge(['Content-Type' => 'application/json'], $headers),
-        );
+        return $this->statusCode;
+    }
+
+    /**
+     * Menambahkan header secara berantai (Fluent Interface).
+     */
+    public function withHeader(string $name, string $value): self
+    {
+        $this->headers[$name] = $value;
+        return $this;
+    }
+
+    /**
+     * Shortcut untuk mengirim response JSON.
+     */
+    public static function json(mixed $data, int $status = 200): self
+    {
+        $content = json_encode($data);
+        $headers = ['Content-Type' => 'application/json'];
+    
+        return new self($content, $status, $headers);
+    }
+
+    /**
+     * Dipanggil oleh AuthController::login atau register saat sukses.
+     */
+    public static function success(mixed $data = null, string $message = 'Success'): self
+    {
+        return self::json([
+            'success' => true,
+            'message' => $message,
+            'data'    => $data
+        ], 200);
+    }
+
+    /**
+     * Dipanggil oleh AuthController::register saat berhasil membuat user baru.
+     */
+    public static function created(mixed $data = null, string $message = 'Created'): self
+    {
+        return self::json([
+            'success' => true,
+            'message' => $message,
+            'data'    => $data
+        ], 201);
+    }
+
+    /**
+     * Dipanggil saat terjadi error (Email terdaftar, Password salah, dll).
+     */
+    public static function error(string $message, int $status = 400): self
+    {
+        return self::json([
+            'success' => false,
+            'message' => $message
+        ], $status);
+    }
+
+    /**
+     * Dipanggil jika endpoint atau user tidak ditemukan.
+     */
+    public static function notFound(string $message = 'Not Found'): self
+    {
+        return self::error($message, 404);
+    }
+
+    /**
+     * Mengirim response ke browser.
+     */
+    public function send(): void
+    {
+        if (!headers_sent()) {
+            http_response_code($this->statusCode);
+            foreach ($this->headers as $key => $value) {
+                header("$key: $value");
+            }
+        }
+        echo $this->content;
     }
 
     public static function make(string $content, int $status = 200, array $headers = []): self
     {
         return new self($content, $status, $headers);
-    }
-
-    public function withHeader(string $name, string $value): self
-    {
-        $headers = $this->headers;
-        $headers[$name] = $value;
-
-        return new self($this->content, $this->status, $headers);
-    }
-
-    public function send(): void
-    {
-        http_response_code($this->status);
-
-        foreach ($this->headers as $name => $value) {
-            header($name . ': ' . $value);
-        }
-
-        echo $this->content;
     }
 }
