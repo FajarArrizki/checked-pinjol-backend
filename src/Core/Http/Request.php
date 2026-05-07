@@ -6,6 +6,9 @@ namespace App\Core\Http;
 
 final class Request
 {
+    // Properti untuk menyimpan data user yang login (diisi oleh AuthMiddleware)
+    private ?array $user = null;
+
     public function __construct(
         private readonly string $method,
         private readonly string $path,
@@ -16,56 +19,135 @@ final class Request
     ) {
     }
 
+    /**
+     * Digunakan oleh AuthMiddleware untuk menyuntikkan data user setelah token valid.
+     */
+    public function setUser(array $userData): void
+    {
+        $this->user = $userData;
+    }
+
+    /**
+     * Digunakan di Controller untuk mengambil data user yang sedang login.
+     */
+    public function user(): ?array
+    {
+        return $this->user;
+    }
+
+    /**
+     * Menangkap request yang masuk dan mengubahnya menjadi object Request.
+     */
     public static function capture(): self
     {
         $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
         $uriPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+        
         $rawBody = file_get_contents('php://input') ?: '';
-        $decodedBody = json_decode($rawBody, true);
+        $contentType = $_SERVER['CONTENT_TYPE'] ?? $_SERVER['HTTP_CONTENT_TYPE'] ?? '';
+
+        // Default body dari $_POST (untuk form-data / upload file)
+        $body = $_POST;
+
+        // Jika request berupa JSON, decode raw body-nya
+        if (str_contains($contentType, 'application/json')) {
+            $decoded = json_decode($rawBody, true);
+            if (is_array($decoded)) {
+                $body = $decoded;
+            }
+        }
 
         return new self(
             $method,
             $uriPath,
-            function_exists('getallheaders') ? getallheaders() : [],
+            self::getAllHeaders(),
             $_GET,
-            is_array($decodedBody) ? $decodedBody : $_POST,
+            $body,
             $rawBody,
         );
     }
 
-    public function method(): string
+    /**
+     * Mengambil semua header request.
+     */
+    private static function getAllHeaders(): array
     {
-        return $this->method;
-    }
-
-    public function path(): string
-    {
-        return $this->path;
-    }
-
-    public function header(string $name, ?string $default = null): ?string
-    {
-        foreach ($this->headers as $key => $value) {
-            if (strtolower($key) === strtolower($name)) {
-                return $value;
-            }
+        if (function_exists('getallheaders')) {
+            return array_change_key_case(getallheaders(), CASE_LOWER);
         }
 
-        return $default;
+        $headers = [];
+        foreach ($_SERVER as $name => $value) {
+            if (str_starts_with($name, 'HTTP_')) {
+                $key = strtolower(str_replace('_', '-', substr($name, 5)));
+                $headers[$key] = $value;
+            }
+        }
+        return $headers;
     }
 
-    public function query(string $key, mixed $default = null): mixed
-    {
-        return $this->query[$key] ?? $default;
-    }
+    // Helper methods
+    public function method(): string { return $this->method; }
+    public function path(): string { return $this->path; }
 
+    /**
+     * Mengambil input berdasarkan key (mendukung POST dan GET).
+     */
     public function input(string $key, mixed $default = null): mixed
     {
-        return $this->body[$key] ?? $default;
+        return $this->body[$key] ?? $this->query[$key] ?? $default;
     }
 
-    public function all(): array
+    public function all(): array 
+    { 
+        return array_merge($this->query, $this->body); 
+    }
+
+    /**
+     * Mengambil satu header spesifik.
+     */
+    public function header(string $name, ?string $default = null): ?string
     {
-        return $this->body;
+        return $this->headers[strtolower($name)] ?? $default;
+    }
+
+    /**
+     * MENGAMBIL TOKEN DARI HEADER AUTHORIZATION (Bearer Token)
+     */
+    public function bearerToken(): ?string
+    {
+        $auth = $this->header('authorization') ?? '';
+        if (str_starts_with($auth, 'Bearer ')) {
+            return substr($auth, 7);
+        }
+        return null;
+    }
+
+    /**
+     * Validasi sederhana untuk input request.
+     */
+    public function validate(array $rules): array
+    {
+        $errors = [];
+        foreach ($rules as $field => $rule) {
+            $value = $this->input($field);
+            $ruleArray = explode('|', $rule);
+
+            foreach ($ruleArray as $singleRule) {
+                if ($singleRule === 'required' && (is_null($value) || $value === '')) {
+                    $errors[] = "Field {$field} wajib diisi.";
+                }
+                if ($singleRule === 'email' && $value && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
+                    $errors[] = "Format {$field} tidak valid.";
+                }
+                if (str_starts_with($singleRule, 'min:')) {
+                    $min = (int) explode(':', $singleRule)[1];
+                    if (strlen((string)$value) < $min) {
+                        $errors[] = "Field {$field} minimal {$min} karakter.";
+                    }
+                }
+            }
+        }
+        return $errors;
     }
 }
