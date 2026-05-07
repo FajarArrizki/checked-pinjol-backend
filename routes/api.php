@@ -21,7 +21,7 @@ use App\Core\Routing\Router;
 return static function (Router $router): void {
 
     // ─── Health & Docs ──────────────────────────────────────────────────────────
-    $router->get('/health',               [HealthController::class, 'index']);
+    $router->get('/health',               [HealthController::class, 'check']);
     // Sesuaikan dengan DocsController yang tadi kita buat (ui dan spec)
     $router->get('/api/docs',             [DocsController::class, 'ui']);
     $router->get('/api/docs/openapi.json', [DocsController::class, 'spec']);

@@ -4,48 +4,50 @@ declare(strict_types=1);
 
 namespace App\Core\Middleware;
 
+use App\Core\Http\{Request, Response};
 use App\Core\Database\DatabaseManager;
-use App\Core\Http\Request;
-use App\Core\Http\Response;
 
+/**
+ * Middleware untuk autentikasi opsional.
+ * Tidak akan menghentikan request jika token tidak ada/salah.
+ */
 class OptionalAuthMiddleware
 {
-    public function __construct(private DatabaseManager $db)
-    {
-    }
+    public function __construct(private DatabaseManager $db) {}
 
     public function handle(Request $request, Response $response): bool|Response
     {
         $token = $request->bearerToken();
 
-        if (! $token) {
+        // Jika tidak ada token, biarkan berlanjut (Data user akan tetap NULL)
+        if (!$token) {
             return true;
         }
 
+        // Coba decode token
         $payload = json_decode(base64_decode($token), true);
 
-        if (! is_array($payload) || ! isset($payload['id'], $payload['type'])) {
+        // Jika format token salah, abaikan saja dan lanjut
+        if (!$payload || !isset($payload['id'], $payload['type'])) {
             return true;
         }
 
-        $table = $payload['type'] === 'admin' ? 'admin' : 'users';
-        $primaryKey = $payload['type'] === 'admin' ? 'id_admin' : 'id_user';
+        // Cari identitas di DB sesuai tipe
+        $table = ($payload['type'] === 'admin') ? 'admin' : 'users';
+        $pk    = ($payload['type'] === 'admin') ? 'id_admin' : 'id_user';
+        
+        $user = $this->db->fetchOne("SELECT * FROM `{$table}` WHERE `{$pk}` = ?", [$payload['id']]);
 
-        $user = $this->db->fetchOne(
-            "SELECT * FROM `{$table}` WHERE `{$primaryKey}` = ?",
-            [$payload['id']]
-        );
-
-        if (! $user) {
-            return true;
+        // Jika user ditemukan di DB, suntikkan ke request
+        if ($user) {
+            $request->setUser([
+                'id'   => $user[$pk],
+                'type' => $payload['type'],
+                'nama' => $user['nama'] ?? 'User'
+            ]);
         }
 
-        $request->setUser([
-            'id' => $user[$primaryKey],
-            'type' => $payload['type'],
-            'nama' => $user['nama'] ?? 'User',
-        ]);
-
+        // Selalu return true karena ini opsional
         return true;
     }
 }

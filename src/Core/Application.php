@@ -7,6 +7,7 @@ namespace App\Core;
 use App\Core\Http\Request;
 use App\Core\Http\Response;
 use App\Core\Middleware\CorsMiddleware;
+use Throwable;
 
 final class Application
 {
@@ -19,18 +20,38 @@ final class Application
 
     public function run(): Response
     {
+        // Menangkap request yang masuk
         $request = Request::capture();
 
         try {
+            // Proses routing
             $response = $this->router->dispatch($request);
-        } catch (\Throwable $exception) {
-            $response = Response::json([
-                'success' => false,
-                'message' => 'Internal server error',
-                'error' => $exception->getMessage(),
-            ], 500);
+        } catch (Throwable $exception) {
+            // Penanganan error global
+            $response = $this->handleException($exception);
         }
 
+        // Terapkan CORS dan kembalikan response
         return $this->corsMiddleware->handle($request, $response);
+    }
+
+    private function handleException(Throwable $e): Response
+    {
+        $debug = filter_var($_ENV['APP_DEBUG'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+        $payload = [
+            'success' => false,
+            'message' => $debug ? $e->getMessage() : 'Terjadi kesalahan pada server',
+        ];
+
+        if ($debug) {
+            $payload['debug'] = [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => array_slice($e->getTrace(), 0, 3)
+            ];
+        }
+
+        return Response::json($payload, 500);
     }
 }
