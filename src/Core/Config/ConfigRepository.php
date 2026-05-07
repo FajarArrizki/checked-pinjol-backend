@@ -10,10 +10,12 @@ final class ConfigRepository
 
     public function __construct(string $configPath)
     {
+        
         foreach (glob($configPath . DIRECTORY_SEPARATOR . '*.php') ?: [] as $file) {
             $this->items[pathinfo($file, PATHINFO_FILENAME)] = require $file;
         }
     }
+
 
     public function get(string $key, mixed $default = null): mixed
     {
@@ -30,4 +32,11 @@ final class ConfigRepository
 
         return $value;
     }
+
+    public function all(): array
+    {
+        return $this->items;
+    }
+
+    
 }

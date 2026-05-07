@@ -7,17 +7,18 @@ namespace App\Core\Http;
 class Response
 {
     /**
-     * Constructor dengan nilai default agar fleksibel saat diinstansiasi di Router.
+     * Constructor dengan nilai default agar fleksibel.
+     * Menggunakan mixed untuk content agar bisa menerima array/string sebelum di-encode.
      */
     public function __construct(
-        private string $content = '',
+        private mixed $content = '',
         private int $statusCode = 200,
         private array $headers = []
     ) {
     }
 
     /**
-     * Mengambil status code (digunakan oleh Router untuk validasi middleware).
+     * Mengambil status code (digunakan oleh Router atau Middleware).
      */
     public function getStatus(): int
     {
@@ -35,17 +36,19 @@ class Response
 
     /**
      * Shortcut untuk mengirim response JSON.
+     * Menambahkan flag agar path file (slash) tidak di-escape menjadi \/.
      */
     public static function json(mixed $data, int $status = 200): self
     {
-        $content = json_encode($data);
+        // JSON_UNESCAPED_SLASHES penting agar path storage/uploads/ tidak rusak
+        $content = json_encode($data, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
         $headers = ['Content-Type' => 'application/json'];
     
         return new self($content, $status, $headers);
     }
 
     /**
-     * Dipanggil oleh AuthController::login atau register saat sukses.
+     * Digunakan saat operasi sukses (misal: login atau upload file).
      */
     public static function success(mixed $data = null, string $message = 'Success'): self
     {
@@ -57,7 +60,7 @@ class Response
     }
 
     /**
-     * Dipanggil oleh AuthController::register saat berhasil membuat user baru.
+     * Digunakan saat berhasil membuat data baru (HTTP 201).
      */
     public static function created(mixed $data = null, string $message = 'Created'): self
     {
@@ -69,7 +72,7 @@ class Response
     }
 
     /**
-     * Dipanggil saat terjadi error (Email terdaftar, Password salah, dll).
+     * Digunakan untuk menangani error aplikasi.
      */
     public static function error(string $message, int $status = 400): self
     {
@@ -80,11 +83,19 @@ class Response
     }
 
     /**
-     * Dipanggil jika endpoint atau user tidak ditemukan.
+     * Shortcut untuk error 404.
      */
     public static function notFound(string $message = 'Not Found'): self
     {
         return self::error($message, 404);
+    }
+
+    /**
+     * Factory method manual jika ingin kustom konten mentah.
+     */
+    public static function make(string $content, int $status = 200, array $headers = []): self
+    {
+        return new self($content, $status, $headers);
     }
 
     /**
@@ -99,10 +110,5 @@ class Response
             }
         }
         echo $this->content;
-    }
-
-    public static function make(string $content, int $status = 200, array $headers = []): self
-    {
-        return new self($content, $status, $headers);
     }
 }
