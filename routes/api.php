@@ -12,6 +12,7 @@ use App\Modules\Regulasi\Controllers\RegulasiController;
 use App\Modules\Admin\Controllers\AdminController;
 use App\Modules\Health\Controllers\HealthController;
 use App\Modules\Docs\Controllers\DocsController; 
+use App\Core\Middleware\OptionalAuthMiddleware;
 use App\Core\Middleware\AuthMiddleware;
 use App\Core\Middleware\AdminMiddleware;
 use App\Core\Middleware\SuperAdminMiddleware;
@@ -20,7 +21,7 @@ use App\Core\Routing\Router;
 return static function (Router $router): void {
 
     // ─── Health & Docs ──────────────────────────────────────────────────────────
-    $router->get('/health',               [HealthController::class, 'check']);
+    $router->get('/health',               [HealthController::class, 'index']);
     // Sesuaikan dengan DocsController yang tadi kita buat (ui dan spec)
     $router->get('/api/docs',             [DocsController::class, 'ui']);
     $router->get('/api/docs/openapi.json', [DocsController::class, 'spec']);

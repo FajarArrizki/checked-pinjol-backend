@@ -12,8 +12,8 @@ foreach (glob(base_path('docs/openapi/*.php')) ?: [] as $file) {
 $openapi = OpenApi\Generator::scan([base_path('docs/openapi')]);
 $json = $openapi->toJson(JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
-if (! str_contains($json, '"/api/health"')) {
-    fwrite(STDERR, "OpenAPI spec does not contain /api/health.\n");
+if (! str_contains($json, '"/health"')) {
+    fwrite(STDERR, "OpenAPI spec does not contain /health.\n");
     exit(1);
 }
 

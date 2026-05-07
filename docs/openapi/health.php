@@ -7,7 +7,7 @@ namespace App\Docs\OpenApi;
 use OpenApi\Attributes as OA;
 
 #[OA\Get(
-    path: '/api/health',
+    path: '/health',
     tags: ['Health'],
     summary: 'Health check endpoint',
     responses: [
