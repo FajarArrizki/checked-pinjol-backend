@@ -15,6 +15,7 @@ use App\Modules\Docs\Controllers\DocsController;
 use App\Core\Middleware\AuthMiddleware;
 use App\Core\Middleware\AdminMiddleware;
 use App\Core\Middleware\SuperAdminMiddleware;
+use App\Core\Middleware\OptionalAuthMiddleware;
 use App\Core\Routing\Router;
 
 return static function (Router $router): void {
