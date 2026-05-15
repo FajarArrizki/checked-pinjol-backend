@@ -6,6 +6,7 @@ namespace App\Core\Middleware;
 
 use App\Core\Http\{Request, Response};
 use App\Core\Database\DatabaseManager;
+use App\Core\Auth\JWT;
 
 class AuthMiddleware
 {
@@ -19,16 +20,14 @@ class AuthMiddleware
             return Response::error('Token tidak ditemukan', 401);
         }
 
-        // Contoh validasi sederhana (Gantilah dengan JWT atau pengecekan DB yang kuat)
-        // Di sini kita asumsikan payload ada di dalam token base64
-        $payload = json_decode(base64_decode($token), true);
+        $payload = JWT::decode($token);
 
         if (!$payload || !isset($payload['id'], $payload['type'])) {
             return Response::error('Token tidak valid', 401);
         }
 
         // Cari identitas di DB
-        $table = ($payload['type'] === 'admin') ? 'admin' : 'users';
+        $table = ($payload['type'] === 'admin') ? 'admin' : 'user';
         $pk    = ($payload['type'] === 'admin') ? 'id_admin' : 'id_user';
         $user  = $this->db->fetchOne("SELECT * FROM `{$table}` WHERE `{$pk}` = ?", [$payload['id']]);
 

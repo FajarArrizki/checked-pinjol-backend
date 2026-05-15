@@ -24,7 +24,16 @@ class AdminController
     )]
     public function dashboard(Request $request): Response
     {
+        $today = date('Y-m-d');
+
         return Response::success([
+            'overview' => [
+                'laporan_hari_ini' => $this->db->count('laporan', 'DATE(tanggal_lapor) = ?', [$today]),
+                'laporan_tertunda' => $this->db->count('laporan', 'status_laporan = ?', ['menunggu']),
+                'aplikasi_baru_hari_ini' => $this->db->count('pinjol', 'DATE(created_at) = ?', [$today]),
+                'tindakan_selesai' => $this->db->count('laporan', 'status_laporan = ?', ['selesai']),
+                'tingkat_penyelesaian' => $this->calculateCompletionRate(),
+            ],
             'total_pinjol'  => [
                 'semua'            => $this->db->count('pinjol'),
                 'legal'            => $this->db->count('pinjol', 'status_pinjol = ?', ['legal']),
@@ -42,11 +51,96 @@ class AdminController
             'total_artikel' => $this->db->count('artikel_edukasi'),
             'total_ulasan'  => $this->db->count('ulasan'),
             'laporan_terbaru' => $this->db->fetchAll(
-                "SELECT l.kode_laporan, l.judul_laporan, l.status_laporan, l.tanggal_lapor, p.nama_pinjol
-                 FROM `laporan` l
-                 LEFT JOIN `pinjol` p ON l.id_pinjol = p.id_pinjol
+                "SELECT l.id_laporan, l.kode_laporan, l.judul_laporan, l.nama_pelapor, l.status_laporan, l.tanggal_lapor, p.nama_pinjol
+                  FROM `laporan` l
+                  LEFT JOIN `pinjol` p ON l.id_pinjol = p.id_pinjol
                  ORDER BY l.created_at DESC LIMIT 5"
             ),
+            'status_laporan' => [
+                'menunggu' => $this->db->count('laporan', 'status_laporan = ?', ['menunggu']),
+                'diproses' => $this->db->count('laporan', 'status_laporan = ?', ['diproses']),
+                'selesai'  => $this->db->count('laporan', 'status_laporan = ?', ['selesai']),
+                'ditolak'  => $this->db->count('laporan', 'status_laporan = ?', ['ditolak']),
+            ],
+        ]);
+    }
+
+    private function calculateCompletionRate(): int
+    {
+        $total = $this->db->count('laporan');
+        if ($total <= 0) {
+            return 0;
+        }
+
+        $selesai = $this->db->count('laporan', 'status_laporan = ?', ['selesai']);
+        return (int) round(($selesai / $total) * 100);
+    }
+
+    #[OA\Get(
+        path: '/api/admin/laporan',
+        summary: 'Daftar laporan untuk dashboard admin dengan pencarian dan pagination',
+        tags: ['Admin'],
+        security: [['BearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'page', in: 'query', schema: new OA\Schema(type: 'integer', default: 1)),
+            new OA\Parameter(name: 'per_page', in: 'query', schema: new OA\Schema(type: 'integer', default: 10)),
+            new OA\Parameter(name: 'search', in: 'query', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'status', in: 'query', schema: new OA\Schema(type: 'string'))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Daftar laporan berhasil dimuat')
+        ]
+    )]
+    public function laporan(Request $request): Response
+    {
+        $page    = max(1, (int) $request->input('page', 1));
+        $perPage = min(100, max(5, (int) $request->input('per_page', 10)));
+        $search  = trim((string) $request->input('search', ''));
+        $status  = trim((string) $request->input('status', ''));
+        $offset  = ($page - 1) * $perPage;
+
+        $where = '1=1';
+        $params = [];
+
+        if ($search !== '') {
+            $where .= ' AND (l.kode_laporan LIKE ? OR l.judul_laporan LIKE ? OR l.nama_pelapor LIKE ? OR p.nama_pinjol LIKE ?)';
+            $like = '%' . $search . '%';
+            array_push($params, $like, $like, $like, $like);
+        }
+
+        if ($status !== '' && in_array($status, ['menunggu', 'diproses', 'selesai', 'ditolak'], true)) {
+            $where .= ' AND l.status_laporan = ?';
+            $params[] = $status;
+        }
+
+        $total = $this->db->fetchOne(
+            "SELECT COUNT(*) AS total
+             FROM `laporan` l
+             LEFT JOIN `pinjol` p ON p.id_pinjol = l.id_pinjol
+             WHERE {$where}",
+            $params
+        );
+
+        $data = $this->db->fetchAll(
+            "SELECT l.id_laporan, l.kode_laporan, l.judul_laporan, l.nama_pelapor, l.kontak_pelapor,
+                    l.email_pelapor, l.tautan_aplikasi, l.foto_bukti, l.status_laporan, l.tanggal_lapor,
+                    l.id_pinjol, p.nama_pinjol, p.status_pinjol
+             FROM `laporan` l
+             LEFT JOIN `pinjol` p ON p.id_pinjol = l.id_pinjol
+             WHERE {$where}
+             ORDER BY l.created_at DESC
+             LIMIT $perPage OFFSET $offset",
+            $params
+        );
+
+        return Response::success([
+            'data' => $data,
+            'meta' => [
+                'current_page' => $page,
+                'per_page' => $perPage,
+                'total' => (int) ($total['total'] ?? 0),
+                'total_pages' => (int) max(1, ceil(((int) ($total['total'] ?? 0)) / $perPage)),
+            ],
         ]);
     }
 
@@ -277,6 +371,33 @@ class AdminController
         }
 
         return Response::success($settings);
+    }
+
+    public function weeklyRecapPreview(Request $request): Response
+    {
+        $weekAgo = date('Y-m-d H:i:s', strtotime('-7 days'));
+
+        $overview = [
+            'laporan_masuk_7_hari' => $this->db->count('laporan', 'created_at >= ?', [$weekAgo]),
+            'laporan_diproses_7_hari' => $this->db->count('laporan', 'updated_at >= ? AND status_laporan = ?', [$weekAgo, 'diproses']),
+            'laporan_selesai_7_hari' => $this->db->count('laporan', 'updated_at >= ? AND status_laporan = ?', [$weekAgo, 'selesai']),
+            'laporan_ditolak_7_hari' => $this->db->count('laporan', 'updated_at >= ? AND status_laporan = ?', [$weekAgo, 'ditolak']),
+        ];
+
+        $checkedReports = $this->db->fetchAll(
+            "SELECT id_laporan, kode_laporan, judul_laporan, status_laporan, updated_at
+             FROM `laporan`
+             WHERE updated_at >= ?
+               AND status_laporan IN ('diproses', 'selesai', 'ditolak')
+             ORDER BY updated_at DESC
+             LIMIT 10",
+            [$weekAgo]
+        );
+
+        return Response::success([
+            'overview' => $overview,
+            'checked_reports' => $checkedReports,
+        ]);
     }
 
     #[OA\Put(

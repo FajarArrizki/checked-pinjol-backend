@@ -5,13 +5,14 @@ declare(strict_types=1);
 use App\Modules\Auth\AuthController;
 use App\Modules\Pinjol\Controllers\PinjolController;
 use App\Modules\Laporan\Controllers\LaporanController;
-use App\Modules\Ulasan\Controllers\UlasanController;
+use App\Modules\Ulasan\UlasanController;
 use App\Modules\Artikel\Controllers\ArtikelController;
-use App\Modules\Simulasi\Controllers\SimulasiController;
+use App\Modules\Simulasi\SimulasiController;
 use App\Modules\Regulasi\Controllers\RegulasiController;
 use App\Modules\Admin\Controllers\AdminController;
 use App\Modules\Health\Controllers\HealthController;
 use App\Modules\Docs\Controllers\DocsController; 
+use App\Modules\File\Controllers\FileController;
 use App\Core\Middleware\OptionalAuthMiddleware;
 use App\Core\Middleware\AuthMiddleware;
 use App\Core\Middleware\AdminMiddleware;
@@ -30,7 +31,12 @@ return static function (Router $router): void {
     $router->post('/api/auth/register',        [AuthController::class, 'register']);
     $router->post('/api/auth/login',           [AuthController::class, 'login']);
     $router->post('/api/auth/admin/login',      [AuthController::class, 'adminLogin']);
+    $router->post('/api/auth/admin/verify-2fa', [AuthController::class, 'verifyAdminTwoFactor']);
     $router->get('/api/auth/me',               [AuthController::class, 'me'],             [AuthMiddleware::class]);
+    $router->put('/api/auth/profile',          [AuthController::class, 'updateProfile'],  [AuthMiddleware::class]);
+    $router->get('/api/auth/2fa/setup',        [AuthController::class, 'twoFactorSetup'], [AuthMiddleware::class]);
+    $router->post('/api/auth/2fa/confirm',     [AuthController::class, 'confirmTwoFactor'], [AuthMiddleware::class]);
+    $router->delete('/api/auth/2fa',           [AuthController::class, 'disableTwoFactor'], [AuthMiddleware::class]);
     $router->post('/api/auth/change-password', [AuthController::class, 'changePassword'], [AuthMiddleware::class]);
 
     // ─── Pinjol (public) ────────────────────────────────────────────────────────
@@ -49,9 +55,12 @@ return static function (Router $router): void {
     $router->post('/api/ulasan',    [UlasanController::class, 'store'], [OptionalAuthMiddleware::class]);
 
     // ─── Artikel ────────────────────────────────────────────────────────────────
-    $router->get('/api/artikel/kategori', [ArtikelController::class, 'kategori']);
-    $router->get('/api/artikel',          [ArtikelController::class, 'index']);
-    $router->get('/api/artikel/:id',      [ArtikelController::class, 'show']);
+    $router->get('/api/artikel/kategori', [ArtikelController::class, 'kategori'], [OptionalAuthMiddleware::class]);
+    $router->get('/api/artikel',          [ArtikelController::class, 'index'], [OptionalAuthMiddleware::class]);
+    $router->get('/api/artikel/:id',      [ArtikelController::class, 'show'], [OptionalAuthMiddleware::class]);
+
+    // ─── Files ─────────────────────────────────────────────────────────────────
+    $router->get('/api/uploads/:path', [FileController::class, 'show']);
 
     // ─── Simulasi ───────────────────────────────────────────────────────────────
     $router->post('/api/simulasi',           [SimulasiController::class, 'hitung'], [OptionalAuthMiddleware::class]);
@@ -65,19 +74,23 @@ return static function (Router $router): void {
     // ═══ ADMIN ROUTES (Flat - Tanpa Group) ═══════════════════════════════════════
     $router->get('/api/admin/dashboard', [AdminController::class, 'dashboard'], [AdminMiddleware::class]);
     $router->get('/api/admin/pengaturan',  [AdminController::class, 'pengaturan'], [AdminMiddleware::class]);
+    $router->get('/api/admin/pengaturan/weekly-recap-preview',  [AdminController::class, 'weeklyRecapPreview'], [AdminMiddleware::class]);
     $router->put('/api/admin/pengaturan',  [AdminController::class, 'updatePengaturan'], [AdminMiddleware::class]);
     $router->get('/api/admin/users',      [AdminController::class, 'users'], [AdminMiddleware::class]);
     $router->get('/api/admin/users/:id',  [AdminController::class, 'showUser'], [AdminMiddleware::class]);
 
     $router->post('/api/admin/pinjol',       [PinjolController::class, 'store'], [AdminMiddleware::class]);
+    $router->get('/api/admin/pinjol/:id',    [PinjolController::class, 'show'], [AdminMiddleware::class]);
     $router->put('/api/admin/pinjol/:id',    [PinjolController::class, 'update'], [AdminMiddleware::class]);
     $router->delete('/api/admin/pinjol/:id', [PinjolController::class, 'destroy'], [AdminMiddleware::class]);
 
+    $router->get('/api/admin/laporan',            [AdminController::class, 'laporan'], [AdminMiddleware::class]);
     $router->get('/api/admin/laporan/statistik',      [LaporanController::class, 'statistik'], [AdminMiddleware::class]);
     $router->patch('/api/admin/laporan/:id/status',   [LaporanController::class, 'updateStatus'], [AdminMiddleware::class]);
+    $router->patch('/api/admin/laporan/:id/reply',    [LaporanController::class, 'reply'], [AdminMiddleware::class]);
 
     $router->post('/api/admin/artikel',       [ArtikelController::class, 'store'], [AdminMiddleware::class]);
-    $router->put('/api/admin/artikel/:id',    [ArtikelController::class, 'update'], [AdminMiddleware::class]);
+    $router->post('/api/admin/artikel/:id',    [ArtikelController::class, 'update'], [AdminMiddleware::class]);
     $router->delete('/api/admin/artikel/:id', [ArtikelController::class, 'destroy'], [AdminMiddleware::class]);
 
     $router->post('/api/admin/regulasi',       [RegulasiController::class, 'store'], [AdminMiddleware::class]);

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Modules\Simulasi\Controllers;
+namespace App\Modules\Simulasi;
 
 use App\Core\Http\{Request, Response};
 use App\Core\Database\DatabaseManager;

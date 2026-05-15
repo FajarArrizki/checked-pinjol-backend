@@ -79,9 +79,15 @@ final class Router
                 continue;
             }
 
-            $pattern = preg_replace_callback('/:([a-zA-Z_][a-zA-Z0-9_]*)/', function($m) {
-                return "(?P<" . $m[1] . ">[^/]+)";
-            }, rtrim($route['path'], '/') ?: '/');
+            $routePath = rtrim($route['path'], '/') ?: '/';
+            $pattern = preg_replace_callback('/:(\w+)/', function($m) use ($routePath) {
+                $paramName = $m[1];
+                $isLastParam = str_ends_with($routePath, ':' . $paramName);
+
+                return $isLastParam
+                    ? '(?P<' . $paramName . '>.+)'
+                    : '(?P<' . $paramName . '>[^/]+)';
+            }, $routePath);
             
             $pattern = '#^' . $pattern . '$#';
 

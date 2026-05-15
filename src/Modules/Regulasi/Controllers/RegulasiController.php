@@ -64,10 +64,8 @@ class RegulasiController
             new OA\Response(response: 404, description: 'Regulasi tidak ditemukan')
         ]
     )]
-    public function show(Request $request): Response
+    public function show(Request $request, string $id): Response
     {
-        $id = $request->input('id');
-
         $row = $this->db->fetchOne(
             'SELECT * FROM `regulasi_filter` WHERE id_regulasi = ?',
             [$id]
@@ -149,10 +147,8 @@ class RegulasiController
             new OA\Response(response: 404, description: 'Regulasi tidak ditemukan')
         ]
     )]
-    public function update(Request $request): Response
+    public function update(Request $request, string $id): Response
     {
-        $id = $request->input('id');
-        
         if (!$this->db->fetchOne('SELECT id_regulasi FROM `regulasi_filter` WHERE id_regulasi = ?', [$id])) {
             return Response::notFound('Regulasi tidak ditemukan');
         }
@@ -186,10 +182,8 @@ class RegulasiController
             new OA\Response(response: 404, description: 'Regulasi tidak ditemukan')
         ]
     )]
-    public function destroy(Request $request): Response
+    public function destroy(Request $request, string $id): Response
     {
-        $id = $request->input('id');
-
         if (!$this->db->fetchOne('SELECT id_regulasi FROM `regulasi_filter` WHERE id_regulasi = ?', [$id])) {
             return Response::notFound('Regulasi tidak ditemukan');
         }
