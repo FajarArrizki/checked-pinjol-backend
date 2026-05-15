@@ -167,12 +167,18 @@ CREATE TABLE IF NOT EXISTS `artikel_edukasi` (
   `id_artikel`  BIGINT(20)   NOT NULL AUTO_INCREMENT,
   `id_admin`    BIGINT(20)   DEFAULT NULL,
   `judul`       VARCHAR(255) DEFAULT NULL,
+  `slug`        VARCHAR(255) DEFAULT NULL,
   `kategori`    VARCHAR(100) DEFAULT NULL,
+  `author`      VARCHAR(255) DEFAULT NULL,
+  `summary`     TEXT         DEFAULT NULL,
   `isi_artikel` TEXT         DEFAULT NULL,
   `gambar`      VARCHAR(255) DEFAULT NULL,
+  `status`      VARCHAR(50)  DEFAULT 'draft' COMMENT 'draft | published | archived',
+  `published_at` DATETIME    DEFAULT NULL,
   `created_at`  DATETIME     DEFAULT NULL,
   `updated_at`  DATETIME     DEFAULT NULL,
   PRIMARY KEY (`id_artikel`),
+  UNIQUE KEY `uq_artikel_slug` (`slug`),
   KEY `fk_artikel_admin` (`id_admin`),
   CONSTRAINT `artikel_edukasi_ibfk_1` FOREIGN KEY (`id_admin`) REFERENCES `admin` (`id_admin`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

@@ -210,10 +210,36 @@ class PinjolController
             new OA\Response(response: 404, description: 'Pinjol tidak ditemukan')
         ]
     )]
-    public function update(Request $request): Response
+    public function show(Request $request, string $id): Response
     {
-        $id = $request->input('id'); 
-        
+        $auth = $request->user();
+
+        if (!$auth || ($auth['type'] ?? '') !== 'admin') {
+            return Response::error('Forbidden', 403);
+        }
+
+        $pinjol = $this->db->fetchOne(
+            'SELECT id_pinjol, nama_pinjol, tahun_berdiri, alamat, website, status_pinjol, created_by, created_at, updated_at
+             FROM `pinjol`
+             WHERE id_pinjol = ?',
+            [$id]
+        );
+
+        if (!$pinjol) {
+            return Response::notFound('Pinjol tidak ditemukan');
+        }
+
+        return Response::success($pinjol);
+    }
+
+    public function update(Request $request, string $id): Response
+    {
+        $auth = $request->user();
+
+        if (!$auth || ($auth['type'] ?? '') !== 'admin') {
+            return Response::error('Forbidden', 403);
+        }
+
         if (!$this->db->fetchOne('SELECT id_pinjol FROM `pinjol` WHERE id_pinjol = ?', [$id])) {
             return Response::notFound('Pinjol tidak ditemukan');
         }
@@ -232,5 +258,23 @@ class PinjolController
             $this->db->fetchOne('SELECT * FROM `pinjol` WHERE id_pinjol = ?', [$id]),
             'Pinjol berhasil diperbarui'
         );
+    }
+
+    public function destroy(Request $request, string $id): Response
+    {
+        $auth = $request->user();
+
+        if (!$auth || ($auth['type'] ?? '') !== 'admin') {
+            return Response::error('Forbidden', 403);
+        }
+
+        $pinjol = $this->db->fetchOne('SELECT id_pinjol FROM `pinjol` WHERE id_pinjol = ?', [$id]);
+        if (!$pinjol) {
+            return Response::notFound('Pinjol tidak ditemukan');
+        }
+
+        $this->db->delete('pinjol', 'id_pinjol = ?', [$id]);
+
+        return Response::success(null, 'Pinjol berhasil dihapus');
     }
 }

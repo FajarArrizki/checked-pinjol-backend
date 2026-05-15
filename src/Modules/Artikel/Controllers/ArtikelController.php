@@ -6,12 +6,21 @@ namespace App\Modules\Artikel\Controllers;
 
 use App\Core\Http\{Request, Response};
 use App\Core\Database\DatabaseManager;
+use App\Support\FileUploader;
+use App\Core\Config\ConfigRepository;
 use OpenApi\Attributes as OA;
 
 #[OA\Tag(name: 'Artikel', description: 'Konten edukasi dan tips terkait pinjaman online')]
 class ArtikelController
 {
-    public function __construct(private DatabaseManager $db) {}
+    private FileUploader $uploader;
+
+    public function __construct(
+        private DatabaseManager $db,
+        private ConfigRepository $config,
+    ) {
+        $this->uploader = new FileUploader($this->config);
+    }
 
     #[OA\Get(
         path: '/api/artikel',
@@ -29,10 +38,12 @@ class ArtikelController
     )]
     public function index(Request $request): Response
     {
+        $auth = $request->user();
         $page     = max(1, (int) $request->input('page', 1));
         $perPage  = min(50, max(5, (int) $request->input('per_page', 10)));
         $kategori = $request->input('kategori', '');
         $search   = $request->input('search', '');
+        $status   = $request->input('status', '');
         $offset   = ($page - 1) * $perPage;
 
         $where  = '1=1';
@@ -44,15 +55,25 @@ class ArtikelController
         }
 
         if ($search) {
-            $where   .= ' AND (a.judul LIKE ? OR a.isi_artikel LIKE ?)';
+            $where   .= ' AND (a.judul LIKE ? OR a.isi_artikel LIKE ? OR a.summary LIKE ?)';
+            $params[] = "%{$search}%";
             $params[] = "%{$search}%";
             $params[] = "%{$search}%";
         }
 
-        $total = $this->db->count('artikel_edukasi a', $where, $params);
+        if ($status) {
+            $where   .= ' AND status = ?';
+            $params[] = $status;
+        } elseif (($auth['type'] ?? '') !== 'admin') {
+            $where   .= ' AND status = ?';
+            $params[] = 'published';
+        }
+
+        $total = $this->db->count('artikel_edukasi', $where, $params);
 
         $data = $this->db->fetchAll(
-            "SELECT a.id_artikel, a.judul, a.kategori, a.gambar, a.created_at,
+            "SELECT a.id_artikel, a.judul, a.slug, a.kategori, a.author, a.summary, 
+                    a.gambar, a.status, a.published_at, a.created_at, a.updated_at,
                     adm.nama as nama_penulis
              FROM `artikel_edukasi` a
              LEFT JOIN `admin` adm ON a.id_admin = adm.id_admin
@@ -85,10 +106,9 @@ class ArtikelController
             new OA\Response(response: 404, description: 'Artikel tidak ditemukan')
         ]
     )]
-    public function show(Request $request): Response
+    public function show(Request $request, string $id): Response
     {
-        $id = $request->input('id');
-
+        $auth = $request->user();
         $artikel = $this->db->fetchOne(
             "SELECT a.*, adm.nama as nama_penulis
              FROM `artikel_edukasi` a
@@ -98,6 +118,10 @@ class ArtikelController
         );
 
         if (!$artikel) {
+            return Response::notFound('Artikel tidak ditemukan');
+        }
+
+        if (($auth['type'] ?? '') !== 'admin' && ($artikel['status'] ?? 'draft') !== 'published') {
             return Response::notFound('Artikel tidak ditemukan');
         }
 
@@ -132,6 +156,8 @@ class ArtikelController
             'judul'       => 'required|min:5|max:255',
             'kategori'    => 'required|max:100',
             'isi_artikel' => 'required|min:50',
+            'author'      => 'required|max:255',
+            'summary'     => 'required|min:20',
         ]);
 
         if (!empty($errors)) {
@@ -139,20 +165,53 @@ class ArtikelController
         }
 
         $admin = $request->user();
+        $judul = sanitize((string)$request->input('judul'));
+        $slug = $this->generateSlug($judul);
+        $status = $request->input('status', 'draft');
+
+        $gambarPath = $this->resolveGambarPath($request, 'gambar', null);
         
-        $id = $this->db->insert('artikel_edukasi', [
+        $data = [
             'id_admin'    => $admin['id'] ?? null,
-            'judul'       => sanitize((string)$request->input('judul')),
+            'judul'       => $judul,
+            'slug'        => $slug,
             'kategori'    => sanitize((string)$request->input('kategori')),
+            'author'      => sanitize((string)$request->input('author')),
+            'summary'     => sanitize((string)$request->input('summary')),
             'isi_artikel' => $request->input('isi_artikel'),
-            'gambar'      => $request->input('gambar'),
+            'gambar'      => $gambarPath,
+            'status'      => $status,
             'created_at'  => date('Y-m-d H:i:s'),
             'updated_at'  => date('Y-m-d H:i:s'),
-        ]);
+        ];
+
+        if ($status === 'published') {
+            $data['published_at'] = date('Y-m-d H:i:s');
+        }
+
+        $id = $this->db->insert('artikel_edukasi', $data);
 
         $newArtikel = $this->db->fetchOne('SELECT * FROM `artikel_edukasi` WHERE id_artikel = ?', [$id]);
         
-        return Response::created($newArtikel, 'Artikel berhasil dipublikasikan');
+        return Response::created($newArtikel, 'Artikel berhasil disimpan');
+    }
+
+    private function generateSlug(string $text): string
+    {
+        $text = strtolower($text);
+        $text = preg_replace('/[^a-z0-9\s-]/', '', $text);
+        $text = preg_replace('/[\s-]+/', '-', $text);
+        $text = trim($text, '-');
+        
+        // Check if slug exists, add number suffix if needed
+        $originalSlug = $text;
+        $counter = 1;
+        while ($this->db->fetchOne('SELECT id_artikel FROM `artikel_edukasi` WHERE slug = ?', [$text])) {
+            $text = $originalSlug . '-' . $counter;
+            $counter++;
+        }
+        
+        return $text;
     }
 
     #[OA\Put(
@@ -179,20 +238,36 @@ class ArtikelController
             new OA\Response(response: 404, description: 'Artikel tidak ditemukan')
         ]
     )]
-    public function update(Request $request): Response
+    public function update(Request $request, string $id): Response
     {
-        $id = $request->input('id');
-        
         if (!$this->db->fetchOne('SELECT id_artikel FROM `artikel_edukasi` WHERE id_artikel = ?', [$id])) {
             return Response::notFound('Artikel tidak ditemukan');
         }
 
-        $allowed = ['judul', 'kategori', 'isi_artikel', 'gambar'];
+        $allowed = ['judul', 'kategori', 'author', 'summary', 'isi_artikel', 'gambar', 'status'];
         $data    = array_intersect_key($request->all(), array_flip($allowed));
         $data['updated_at'] = date('Y-m-d H:i:s');
 
-        if (isset($data['judul'])) $data['judul'] = sanitize((string)$data['judul']);
+        $gambarPath = $this->resolveGambarPath($request, 'gambar', null);
+        if ($gambarPath !== null) {
+            $data['gambar'] = $gambarPath;
+        }
+
+        if (isset($data['judul'])) {
+            $data['judul'] = sanitize((string)$data['judul']);
+            $data['slug'] = $this->generateSlug($data['judul']);
+        }
         if (isset($data['kategori'])) $data['kategori'] = sanitize((string)$data['kategori']);
+        if (isset($data['author'])) $data['author'] = sanitize((string)$data['author']);
+        if (isset($data['summary'])) $data['summary'] = sanitize((string)$data['summary']);
+
+        // Set published_at when status changes to published
+        if (isset($data['status']) && $data['status'] === 'published') {
+            $current = $this->db->fetchOne('SELECT published_at FROM `artikel_edukasi` WHERE id_artikel = ?', [$id]);
+            if (!$current['published_at']) {
+                $data['published_at'] = date('Y-m-d H:i:s');
+            }
+        }
 
         $this->db->update('artikel_edukasi', $data, 'id_artikel = ?', [$id]);
 
@@ -214,10 +289,8 @@ class ArtikelController
             new OA\Response(response: 404, description: 'Artikel tidak ditemukan')
         ]
     )]
-    public function destroy(Request $request): Response
+    public function destroy(Request $request, string $id): Response
     {
-        $id = $request->input('id');
-
         if (!$this->db->fetchOne('SELECT id_artikel FROM `artikel_edukasi` WHERE id_artikel = ?', [$id])) {
             return Response::notFound('Artikel tidak ditemukan');
         }
@@ -245,5 +318,20 @@ class ArtikelController
         );
         
         return Response::success($list);
+    }
+
+    private function resolveGambarPath(Request $request, string $field, ?string $currentPath): ?string
+    {
+        if (!isset($_FILES[$field])) {
+            return $currentPath;
+        }
+
+        $file = $_FILES[$field];
+        if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+            return $currentPath;
+        }
+
+        $uploaded = $this->uploader->upload($file, 'artikel');
+        return '/' . ltrim((string) $uploaded['file_path'], '/');
     }
 }

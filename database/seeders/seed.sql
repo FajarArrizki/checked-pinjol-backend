@@ -1,55 +1,41 @@
 -- ============================================================
 -- Seeder: pinjol_db
--- Jalankan setelah init.sql
+-- Hanya seed admin dan superadmin baru
 -- ============================================================
 
 USE `pinjol_db`;
 
--- Admin (password: admin123 - di-hash dengan bcrypt saat production)
--- Untuk development, password_hash diisi plain text dan APP_ENV=development
+DELETE FROM `admin`;
+
+DELETE FROM `lampiran_laporan`;
+DELETE FROM `laporan_regulasi`;
+DELETE FROM `laporan`;
+DELETE FROM `pinjol`;
+DELETE FROM `regulasi_filter`;
+
 INSERT INTO `admin` (`nama`, `email`, `username`, `password_hash`, `role`, `no_hp`, `is_active`, `created_at`, `updated_at`) VALUES
-('Admin Utama',   'admin@pinjol.id',       'admin',      'admin123',       'superadmin', '08111000001', 1, NOW(), NOW()),
-('Admin Moderator','moderator@pinjol.id',  'moderator',  'moderator123',   'admin',      '08111000002', 1, NOW(), NOW());
+('Admin Satu', 'admin1@pinjol.id', 'admin1', '$2y$12$H4d2XsSPrvJ8uxrO97jWI.MYtCUdCgpLENDURnc7JJbGam8kyYJ8m', 'admin', '08111000001', 1, NOW(), NOW()),
+('Super Admin', 'superadmin@pinjol.id', 'superadmin', '$2y$12$d287SqKqfL34BVqB6J1/s.swSOHlDwZXAQsK4ZLSNIRTE.2a7rVEC', 'superadmin', '08111000003', 1, NOW(), NOW());
 
--- User
-INSERT INTO `user` (`nama`, `email`, `no_hp`, `password_hash`, `created_at`, `updated_at`) VALUES
-('Budi Santoso',  'budi@mail.com',   '08123456789', 'user123', NOW(), NOW()),
-('Siti Rahayu',   'siti@mail.com',   '08234567890', 'user123', NOW(), NOW());
-
--- Pinjol
 INSERT INTO `pinjol` (`nama_pinjol`, `tahun_berdiri`, `alamat`, `website`, `status_pinjol`, `created_by`, `created_at`, `updated_at`) VALUES
-('AdaKami',           2016, 'Jakarta Selatan', 'https://adakami.id',         'legal',            1, NOW(), NOW()),
-('Kredivo',           2015, 'Jakarta',         'https://kredivo.com',        'legal',            1, NOW(), NOW()),
-('Akulaku',           2016, 'Jakarta',         'https://akulaku.com',        'legal',            1, NOW(), NOW()),
-('KoinWorks',         2016, 'Jakarta',         'https://koinworks.com',      'legal',            1, NOW(), NOW()),
-('Pinjam Cepat Pro',  NULL,  NULL,             NULL,                         'ilegal',           1, NOW(), NOW()),
-('Dana Kilat 24Jam',  NULL,  NULL,             NULL,                         'ilegal',           1, NOW(), NOW()),
-('UangMe',            2017, 'Jakarta',         'https://uangme.id',          'dalam_pengawasan', 1, NOW(), NOW());
+('KreditPintar', 2018, 'Jakarta', 'https://kreditpintar.com', 'legal', NULL, NOW(), NOW()),
+('AdaKami', 2016, 'Jakarta', 'https://adakami.id', 'legal', NULL, NOW(), NOW()),
+('PinjamCepat', NULL, NULL, NULL, 'ilegal', NULL, NOW(), NOW());
 
--- Regulasi Filter
 INSERT INTO `regulasi_filter` (`nama_kriteria`, `deskripsi`, `is_active`, `created_by`, `created_at`, `updated_at`) VALUES
-('Tidak terdaftar OJK',         'Pinjol tidak memiliki izin resmi dari Otoritas Jasa Keuangan (OJK)',                            1, 1, NOW(), NOW()),
-('Bunga melebihi batas',        'Bunga harian melebihi 0.4% per hari yang ditetapkan AFPI',                                     1, 1, NOW(), NOW()),
-('Akses kontak tidak sah',      'Aplikasi mengakses seluruh kontak HP peminjam tanpa izin yang sesuai',                         1, 1, NOW(), NOW()),
-('Penagihan dengan ancaman',    'Debt collector melakukan penagihan dengan cara mengancam, mempermalukan, atau intimidasi',      1, 1, NOW(), NOW()),
-('Data pribadi disalahgunakan', 'Data pribadi peminjam disebarkan atau digunakan untuk tujuan selain penagihan',                 1, 1, NOW(), NOW()),
-('Biaya tersembunyi',           'Terdapat biaya yang tidak diinformasikan di awal seperti biaya administrasi tidak wajar',      1, 1, NOW(), NOW()),
-('Tidak ada informasi perusahaan','Identitas, alamat, dan informasi perusahaan tidak transparan kepada peminjam',               1, 1, NOW(), NOW());
+('Izin OJK Tidak Ditemukan', 'Aplikasi tidak terdaftar resmi di OJK.', 1, 1, NOW(), NOW()),
+('Bunga Tidak Wajar', 'Bunga pinjaman melebihi batas kewajaran.', 1, 1, NOW(), NOW());
 
--- Artikel Edukasi
-INSERT INTO `artikel_edukasi` (`id_admin`, `judul`, `kategori`, `isi_artikel`, `created_at`, `updated_at`) VALUES
-(1, 'Cara Membedakan Pinjol Legal dan Ilegal', 'Edukasi', 
- 'Pinjaman online (pinjol) legal wajib terdaftar di OJK. Ciri utama pinjol legal: memiliki izin OJK, bunga transparan maksimal 0.4%/hari, tidak mengakses semua kontak HP, dan penagihan sesuai etika. Sebaliknya, pinjol ilegal biasanya menawarkan proses sangat cepat tanpa verifikasi, bunga sangat tinggi, dan mengancam saat penagihan.',
- NOW(), NOW()),
-(1, 'Waspadai Modus Pinjol Ilegal 2026', 'Peringatan',
- 'Modus baru pinjol ilegal semakin beragam. Mereka kini menggunakan nama yang mirip pinjol legal, membuat aplikasi palsu di luar Play Store, dan menawarkan pinjaman melalui SMS/WhatsApp. Selalu cek daftar pinjol legal di website resmi OJK sebelum meminjam.',
- NOW(), NOW()),
-(1, 'Tips Bijak Menggunakan Pinjaman Online', 'Tips',
- 'Sebelum mengajukan pinjaman online: 1) Pastikan pinjol terdaftar OJK, 2) Hitung kemampuan cicilan (maksimal 30% penghasilan), 3) Baca syarat dan ketentuan dengan teliti, 4) Jangan pinjam untuk kebutuhan konsumtif, 5) Bayar tepat waktu untuk menghindari denda.',
- NOW(), NOW());
+INSERT INTO `laporan` (`id_user`, `kode_laporan`, `judul_laporan`, `isi_laporan`, `nama_pelapor`, `kontak_pelapor`, `email_pelapor`, `tautan_aplikasi`, `foto_bukti`, `status_laporan`, `tanggal_lapor`, `id_pinjol`, `id_admin_penanggung_jawab`, `tanggapan_ojk`, `tanggal_tanggapan`, `created_at`, `updated_at`) VALUES
+(1, 'LAP-DEMO-001', 'Aplikasi Menagih di Luar Jam Wajar', '<p>Aplikasi melakukan penagihan di luar jam yang diperbolehkan dan mengirim pesan berulang.</p>', 'Budi Santoso', '081234567890', 'budi@example.com', 'https://play.google.com/store/apps/details?id=com.demo.pinjol', NULL, 'diproses', NOW(), 1, 1, '<p>Laporan sedang kami proses dan akan ditindaklanjuti.</p>', NOW(), NOW(), NOW()),
+(1, 'LAP-DEMO-002', 'Aplikasi Tidak Punya Izin Resmi', '<p>Aplikasi tidak ditemukan pada daftar penyelenggara berizin dan menggunakan metode penagihan agresif.</p>', 'Siti Aminah', '081298765432', 'siti@example.com', 'https://play.google.com/store/apps/details?id=com.ilegal.demo', NULL, 'menunggu', NOW(), 3, NULL, NULL, NULL, NOW(), NOW());
 
--- Sample Ulasan
-INSERT INTO `ulasan` (`id_user`, `id_pinjol`, `nama_pengulas`, `rating`, `komentar`, `created_at`) VALUES
-(1, 1, 'Budi S.', 4, 'Proses cepat dan transparan. Bunga sesuai yang dijanjikan. Recommended!', NOW()),
-(2, 1, 'Siti R.', 5, 'Sudah 3x pinjam, selalu lancar. CS responsif dan profesional.', NOW()),
-(1, 2, 'Budi S.', 3, 'Proses agak lama tapi aman. Bunga masih reasonable.', NOW());
+INSERT INTO `lampiran_laporan` (`id_laporan`, `nama_file`, `file_path`, `tipe_file`, `ukuran_file`, `uploaded_at`) VALUES
+(1, 'bukti-chat-1.png', 'uploads/laporan/bukti-chat-1.png', 'image', 245120, NOW()),
+(1, 'bukti-penagihan.png', 'uploads/laporan/bukti-penagihan.png', 'image', 198432, NOW()),
+(2, 'bukti-izin.png', 'uploads/laporan/bukti-izin.png', 'image', 153220, NOW());
+
+INSERT INTO `laporan_regulasi` (`id_laporan`, `id_regulasi`, `catatan`) VALUES
+(1, 1, 'Bukti menunjukkan pelanggaran jam penagihan.'),
+(2, 1, 'Aplikasi tidak terdaftar pada daftar resmi.'),
+(2, 2, 'Pengguna menerima biaya tambahan tidak jelas.');

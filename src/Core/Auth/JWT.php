@@ -31,17 +31,17 @@ final class JWT
     public static function encode(array $payload): string
     {
         $header = self::base64UrlEncode(json_encode([
-            'typ' => 'JWT', 
+            'typ' => 'JWT',
             'alg' => 'HS256'
         ]));
 
         $payloadData = array_merge($payload, [
-            'iat' => time(), 
+            'iat' => time(),
             'exp' => time() + self::expiry()
         ]);
 
         $payloadEncoded = self::base64UrlEncode(json_encode($payloadData));
-        
+
         $signature = hash_hmac('sha256', "{$header}.{$payloadEncoded}", self::secret(), true);
         $signatureEncoded = self::base64UrlEncode($signature);
 
@@ -60,7 +60,6 @@ final class JWT
 
         [$header, $payload, $signature] = $parts;
 
-        // Verifikasi Signature
         $expectedSignature = hash_hmac('sha256', "{$header}.{$payload}", self::secret(), true);
         $expectedSignatureEncoded = self::base64UrlEncode($expectedSignature);
 
@@ -68,10 +67,8 @@ final class JWT
             return null;
         }
 
-        // Decode Payload
         $data = json_decode(self::base64UrlDecode($payload), true);
-        
-        // Validasi struktur data dan waktu kadaluarsa
+
         if (!is_array($data)) {
             return null;
         }
@@ -83,17 +80,11 @@ final class JWT
         return $data;
     }
 
-    /**
-     * Helper Base64Url Encode (tanpa padding '=' dan karakter '+/')
-     */
     private static function base64UrlEncode(string $data): string
     {
         return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
     }
 
-    /**
-     * Helper Base64Url Decode
-     */
     private static function base64UrlDecode(string $data): string
     {
         return base64_decode(strtr($data, '-_', '+/'));

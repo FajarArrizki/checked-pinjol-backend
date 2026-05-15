@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Modules\Ulasan\Controllers;
+namespace App\Modules\Ulasan;
 
 use App\Core\Http\{Request, Response};
 use App\Core\Database\DatabaseManager;

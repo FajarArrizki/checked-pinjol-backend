@@ -6,6 +6,7 @@ namespace App\Core\Middleware;
 
 use App\Core\Http\{Request, Response};
 use App\Core\Database\DatabaseManager;
+use App\Core\Auth\JWT;
 
 /**
  * Middleware untuk autentikasi opsional.
@@ -24,8 +25,7 @@ class OptionalAuthMiddleware
             return true;
         }
 
-        // Coba decode token
-        $payload = json_decode(base64_decode($token), true);
+        $payload = JWT::decode($token);
 
         // Jika format token salah, abaikan saja dan lanjut
         if (!$payload || !isset($payload['id'], $payload['type'])) {
@@ -33,7 +33,7 @@ class OptionalAuthMiddleware
         }
 
         // Cari identitas di DB sesuai tipe
-        $table = ($payload['type'] === 'admin') ? 'admin' : 'users';
+        $table = ($payload['type'] === 'admin') ? 'admin' : 'user';
         $pk    = ($payload['type'] === 'admin') ? 'id_admin' : 'id_user';
         
         $user = $this->db->fetchOne("SELECT * FROM `{$table}` WHERE `{$pk}` = ?", [$payload['id']]);

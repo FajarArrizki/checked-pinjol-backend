@@ -6,6 +6,7 @@ namespace App\Core\Middleware;
 
 use App\Core\Http\{Request, Response};
 use App\Core\Database\DatabaseManager;
+use App\Core\Auth\JWT;
 
 /**
  * Middleware khusus untuk membatasi akses hanya bagi Administrator.
@@ -25,8 +26,7 @@ class AdminMiddleware
             return Response::error('Token tidak ditemukan. Silakan login sebagai admin.', 401);
         }
 
-        // 1. Decode Token (Simulasi - Sesuaikan dengan logic JWT Anda)
-        $payload = json_decode(base64_decode($token), true);
+        $payload = JWT::decode($token);
 
         if (!$payload || !isset($payload['id'], $payload['type'])) {
             return Response::error('Sesi tidak valid. Silakan login ulang.', 401);
