@@ -15,28 +15,28 @@ use OpenApi\Attributes as OA;
         content: new OA\JsonContent(
             type: 'object',
             properties: [
-                new OA\Property(property: 'name', type: 'string', example: 'Budi'),
-                new OA\Property(property: 'email', type: 'string', format: 'email', example: 'budi@example.com'),
+                new OA\Property(property: 'nama', type: 'string', example: 'Khalimatus Saharani Pramudyah'),
+                new OA\Property(property: 'email', type: 'string', format: 'email', example: 'saharani2198@gmail.com'),
+                new OA\Property(property: 'no_hp', type: 'string', example: '081234567899'),
                 new OA\Property(property: 'password', type: 'string', example: 'secret123'),
             ]
         )
     ),
     responses: [
         new OA\Response(
-            response: 200,
+            response: 201,
             description: 'User berhasil diregistrasi',
             content: new OA\JsonContent(
                 type: 'object',
                 properties: [
                     new OA\Property(property: 'success', type: 'boolean', example: true),
-                    new OA\Property(property: 'message', type: 'string', example: 'Registrasi berhasil'),
+                    new OA\Property(property: 'message', type: 'string', example: 'Pendaftaran berhasil! Silakan login.'),
                     new OA\Property(
                         property: 'data',
                         type: 'object',
                         properties: [
-                            new OA\Property(property: 'id', type: 'integer', example: 12),
-                            new OA\Property(property: 'name', type: 'string', example: 'Budi'),
-                            new OA\Property(property: 'email', type: 'string', example: 'budi@example.com'),
+                            new OA\Property(property: 'nama', type: 'string', example: 'Khalimatus Saharani Pramudyah'),
+                            new OA\Property(property: 'email', type: 'string', example: 'saharani2198@gmail.com'),
                         ]
                     ),
                 ]
@@ -53,7 +53,7 @@ use OpenApi\Attributes as OA;
         content: new OA\JsonContent(
             type: 'object',
             properties: [
-                new OA\Property(property: 'email', type: 'string', format: 'email', example: 'budi@example.com'),
+                new OA\Property(property: 'email', type: 'string', format: 'email', example: 'saharani2198@gmail.com'),
                 new OA\Property(property: 'password', type: 'string', example: 'secret123'),
             ]
         )

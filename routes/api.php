@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Modules\Auth\AuthController;
+use App\Modules\Auth\Controllers\AuthController;
 use App\Modules\Pinjol\Controllers\PinjolController;
 use App\Modules\Laporan\Controllers\LaporanController;
 use App\Modules\Ulasan\UlasanController;

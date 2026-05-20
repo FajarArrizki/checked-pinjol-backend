@@ -2,16 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Modules\Auth;
+namespace App\Modules\Auth\Controllers;
 
-use App\Core\Http\Request;
-use App\Core\Http\Response;
+use App\Core\Http\{Request, Response};
 use App\Core\Database\DatabaseManager;
 use App\Core\Auth\JWT;
 use OpenApi\Attributes as OA;
 
-#[OA\Info(title: "Auth API", version: "1.0.0")]
-class AuthController
+final class AuthController
 {
     public function __construct(private DatabaseManager $db)
     {
@@ -357,6 +355,27 @@ class AuthController
         return Response::success(['token' => $token, 'user' => $admin, 'type' => 'admin', 'notifications' => $locationAlert ? [$locationAlert] : []], 'Login admin berhasil');
     }
 
+    #[OA\Post(
+        path: '/api/auth/verify-2fa',
+        summary: 'Verifikasi OTP 2FA untuk login admin',
+        tags: ['Auth'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['challenge_token', 'otp'],
+                properties: [
+                    new OA\Property(property: 'challenge_token', type: 'string'),
+                    new OA\Property(property: 'otp', type: 'string', example: '123456')
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Verifikasi 2FA berhasil'),
+            new OA\Response(response: 400, description: 'OTP tidak valid atau 2FA belum aktif'),
+            new OA\Response(response: 401, description: 'Tantangan token kedaluwarsa atau admin tidak aktif'),
+            new OA\Response(response: 422, description: 'Parameter input tidak lengkap')
+        ]
+    )]
     public function verifyAdminTwoFactor(Request $request): Response
     {
         $this->ensureTwoFactorColumns();
@@ -403,7 +422,7 @@ class AuthController
         path: '/api/auth/me',
         summary: 'Mendapatkan profil pengguna saat ini',
         tags: ['Auth'],
-        security: [['bearerAuth' => []]],
+        security: [['BearerAuth' => []]],
         responses: [
             new OA\Response(response: 200, description: 'Data profil berhasil diambil'),
             new OA\Response(response: 401, description: 'Unauthorized'),
@@ -427,6 +446,27 @@ class AuthController
         return $data ? Response::success($data) : Response::notFound('User tidak ditemukan');
     }
 
+    #[OA\Put(
+        path: '/api/auth/update-profile',
+        summary: 'Memperbarui nama profil administrator',
+        tags: ['Auth'],
+        security: [['BearerAuth' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['nama'],
+                properties: [
+                    new OA\Property(property: 'nama', type: 'string', example: 'Rani Administrator')
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Profil berhasil diperbarui'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 422, description: 'Nama wajib diisi')
+        ]
+    )]
     public function updateProfile(Request $request): Response
     {
         $auth = $request->user();
@@ -457,6 +497,16 @@ class AuthController
         return $data ? Response::success($data, 'Profil berhasil diperbarui') : Response::notFound('User tidak ditemukan');
     }
 
+    #[OA\Post(
+        path: '/api/auth/2fa/setup',
+        summary: 'Inisialisasi konfigurasi kunci rahasia Google 2FA',
+        tags: ['Auth'],
+        security: [['BearerAuth' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Setup data QR dan Secret berhasil dikeluarkan'),
+            new OA\Response(response: 403, description: 'Akses ditolak (Hanya admin)')
+        ]
+    )]
     public function twoFactorSetup(Request $request): Response
     {
         $this->ensureTwoFactorColumns();
@@ -500,6 +550,26 @@ class AuthController
         ]);
     }
 
+    #[OA\Post(
+        path: '/api/auth/2fa/confirm',
+        summary: 'Konfirmasi dan aktivasi 2FA menggunakan token OTP pertama',
+        tags: ['Auth'],
+        security: [['BearerAuth' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['otp'],
+                properties: [
+                    new OA\Property(property: 'otp', type: 'string', example: '123456')
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: '2FA aktif'),
+            new OA\Response(response: 400, description: 'OTP tidak valid atau setup belum dibuat'),
+            new OA\Response(response: 422, description: 'OTP harus diisi')
+        ]
+    )]
     public function confirmTwoFactor(Request $request): Response
     {
         $this->ensureTwoFactorColumns();
@@ -532,6 +602,16 @@ class AuthController
         return Response::success(null, '2FA berhasil diaktifkan');
     }
 
+    #[OA\Post(
+        path: '/api/auth/2fa/disable',
+        summary: 'Menonaktifkan fitur keamanan 2FA admin',
+        tags: ['Auth'],
+        security: [['BearerAuth' => []]],
+        responses: [
+            new OA\Response(response: 200, description: '2FA berhasil dinonaktifkan'),
+            new OA\Response(response: 403, description: 'Forbidden')
+        ]
+    )]
     public function disableTwoFactor(Request $request): Response
     {
         $this->ensureTwoFactorColumns();
@@ -555,21 +635,23 @@ class AuthController
         path: '/api/auth/change-password',
         summary: 'Mengubah password user/admin',
         tags: ['Auth'],
-        security: [['bearerAuth' => []]],
+        security: [['BearerAuth' => []]],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
                 required: ['password_lama', 'password_baru'],
                 properties: [
                     new OA\Property(property: 'password_lama', type: 'string'),
-                    new OA\Property(property: 'password_baru', type: 'string')
+                    new OA\Property(property: 'password_baru', type: 'string'),
+                    new OA\Property(property: 'otp', type: 'string', description: 'Diisi jika akun admin mengaktifkan 2FA')
                 ]
             )
         ),
         responses: [
             new OA\Response(response: 200, description: 'Password berhasil diubah'),
-            new OA\Response(response: 400, description: 'Password lama tidak cocok'),
-            new OA\Response(response: 401, description: 'Unauthorized')
+            new OA\Response(response: 400, description: 'Password lama tidak cocok atau OTP salah'),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 422, description: 'OTP belum terisi')
         ]
     )]
     public function changePassword(Request $request): Response
@@ -585,7 +667,7 @@ class AuthController
 
         $record = $this->db->fetchOne("SELECT password_hash FROM $table WHERE $pk = ?", [$auth['id']]);
 
-        if (!bcryptVerify($request->input('password_lama'), (string) $record['password_hash'])) {
+        if (!$record || !bcryptVerify($request->input('password_lama'), (string) $record['password_hash'])) {
             return Response::error('Password lama tidak cocok', 400);
         }
 

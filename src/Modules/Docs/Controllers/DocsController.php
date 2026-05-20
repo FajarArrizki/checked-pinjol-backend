@@ -9,7 +9,6 @@ use App\Core\Http\{Request, Response};
 
 final class DocsController
 {
-
     public function __construct(private readonly ConfigRepository $config)
     {
     }
@@ -65,33 +64,53 @@ HTML;
 
     /**
      * GET /api/docs/openapi.json
-     * Menghasilkan spesifikasi OpenAPI secara dinamis.
+     * Menghasilkan spesifikasi OpenAPI secara dinamis dengan standar Swagger-PHP v4.
      */
     public function spec(Request $request): Response
     {
         try {
+            // Tempat menyimpan konfigurasi global Swagger (seperti OpenApiSpec.php)
             $specPath = base_path('docs/openapi');
-            $srcPath  = base_path('src'); // Tambahkan ini
             
-            if (!is_dir($specPath)) {
-                return Response::error('Folder spesifikasi OpenAPI tidak ditemukan', 500);
+            // Lokasi kode modul utama backend kamu
+            $modulesPath = base_path('App/Modules'); 
+
+            $scanTargets = [];
+
+            if (is_dir($specPath)) {
+                $scanTargets[] = $specPath;
+                // Memuat file manual pendukung jika diperlukan
+                $this->loadSpecificationFiles($specPath);
             }
 
-            // Memuat file manual jika diperlukan
-            $this->loadSpecificationFiles($specPath);
+            if (is_dir($modulesPath)) {
+                $scanTargets[] = $modulesPath;
+            } else {
+                // Fallback ke folder 'App' jika folder 'App/Modules' tidak terdeteksi langsung
+                $scanTargets[] = base_path('App');
+            }
 
-            $openapi = \OpenApi\Generator::scan([
-                $specPath, 
-                $srcPath
-            ]);
+            // Jika tidak ada target folder yang valid sama sekali
+            if (empty($scanTargets)) {
+                return Response::error('Target scanning komponen OpenAPI tidak ditemukan.', 500);
+            }
+
+            /** * SOLUSI TOTAL UNTUK V4 & INTELEPHENSE:
+             * Menggunakan generator instansiasi objek statis bawaan v4 yang 
+             * dikenali dengan baik oleh type-hinting VS Code editor.
+             */
+            $openapi = \OpenApi\Generator::scan($scanTargets);
 
             return Response::make(
                 $openapi->toJson(JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
                 200,
                 ['Content-Type' => 'application/json']
             );
-        } catch (\Exception $e) {
-            return Response::error('Gagal menghasilkan dokumentasi: ' . $e->getMessage(), 500);
+        } catch (\Throwable $e) {
+            return Response::error(
+                'Gagal menghasilkan dokumentasi: ' . $e->getMessage() . ' di file ' . $e->getFile() . ' baris ' . $e->getLine(), 
+                500
+            );
         }
     }
 
