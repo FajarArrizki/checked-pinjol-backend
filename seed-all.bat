@@ -39,21 +39,21 @@ echo.
 echo ========================================
 echo Importing schema
 echo ========================================
-"%MYSQL_EXE%" -u root -p %DB_NAME% ^< "%SCHEMA_FILE%"
+"%MYSQL_EXE%" -u root -p %DB_NAME% < "%SCHEMA_FILE%"
 if errorlevel 1 goto :fail
 
 echo.
 echo ========================================
 echo Importing main seed
 echo ========================================
-"%MYSQL_EXE%" -u root -p %DB_NAME% ^< "%SEED_FILE%"
+"%MYSQL_EXE%" -u root -p %DB_NAME% < "%SEED_FILE%"
 if errorlevel 1 goto :fail
 
 echo.
 echo ========================================
 echo Importing article seed
 echo ========================================
-"%MYSQL_EXE%" -u root -p %DB_NAME% ^< "%SEED_ARTIKEL_FILE%"
+"%MYSQL_EXE%" -u root -p %DB_NAME% < "%SEED_ARTIKEL_FILE%"
 if errorlevel 1 goto :fail
 
 echo.
