@@ -98,6 +98,8 @@ CREATE TABLE IF NOT EXISTS `laporan` (
   `tanggal_lapor`            DATETIME     DEFAULT NULL,
   `id_pinjol`                BIGINT(20)   DEFAULT NULL,
   `id_admin_penanggung_jawab` BIGINT(20)  DEFAULT NULL,
+  `tanggapan_ojk`            TEXT         DEFAULT NULL,
+  `tanggal_tanggapan`        DATETIME     DEFAULT NULL,
   `created_at`               DATETIME     DEFAULT NULL,
   `updated_at`               DATETIME     DEFAULT NULL,
   PRIMARY KEY (`id_laporan`),
