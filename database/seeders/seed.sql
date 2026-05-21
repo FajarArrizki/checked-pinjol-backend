@@ -5,14 +5,15 @@
 
 USE `pinjol_db`;
 
-DELETE FROM `user`;
-DELETE FROM `admin`;
-
+SET FOREIGN_KEY_CHECKS = 0;
 DELETE FROM `lampiran_laporan`;
 DELETE FROM `laporan_regulasi`;
 DELETE FROM `laporan`;
 DELETE FROM `pinjol`;
 DELETE FROM `regulasi_filter`;
+DELETE FROM `user`;
+DELETE FROM `admin`;
+SET FOREIGN_KEY_CHECKS = 1;
 
 ALTER TABLE `user` AUTO_INCREMENT = 1;
 ALTER TABLE `admin` AUTO_INCREMENT = 1;
