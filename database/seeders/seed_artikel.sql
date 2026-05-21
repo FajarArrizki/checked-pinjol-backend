@@ -9,7 +9,7 @@ INSERT INTO `artikel_edukasi`
   (`id_admin`, `judul`, `slug`, `kategori`, `author`, `summary`, `isi_artikel`, `gambar`, `status`, `published_at`, `created_at`, `updated_at`)
 VALUES
   (
-    10,
+    1,
     'Cara Memilih Pinjaman Online yang Aman dan Legal',
     'cara-memilih-pinjaman-online-yang-aman-dan-legal',
     'Tips & Panduan',
@@ -23,7 +23,7 @@ VALUES
     '2026-05-10 10:00:00'
   ),
   (
-    10,
+    1,
     'Bahaya Pinjaman Online Ilegal dan Cara Menghindarinya',
     'bahaya-pinjaman-online-ilegal-dan-cara-menghindarinya',
     'Edukasi',
@@ -37,7 +37,7 @@ VALUES
     '2026-05-11 14:30:00'
   ),
   (
-    11,
+    2,
     'Simulasi Pinjaman: Hitung Cicilan Sebelum Mengajukan',
     'simulasi-pinjaman-hitung-cicilan-sebelum-mengajukan',
     'Tips & Panduan',
@@ -51,7 +51,7 @@ VALUES
     '2026-05-12 09:15:00'
   ),
   (
-    10,
+    1,
     'Hak dan Kewajiban Peminjam Pinjaman Online',
     'hak-dan-kewajiban-peminjam-pinjaman-online',
     'Edukasi',
@@ -65,7 +65,7 @@ VALUES
     '2026-05-13 16:45:00'
   ),
   (
-    11,
+    2,
     'Cara Melaporkan Pinjol Ilegal ke Otoritas',
     'cara-melaporkan-pinjol-ilegal-ke-otoritas',
     'Tips & Panduan',
