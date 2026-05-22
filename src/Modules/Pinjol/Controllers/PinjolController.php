@@ -43,10 +43,14 @@ class PinjolController
         }
 
         $results = $this->db->fetchAll(
-            'SELECT id_pinjol, nama_pinjol, status_pinjol, website, tahun_berdiri, alamat
-             FROM `pinjol`
-             WHERE nama_pinjol LIKE ?
-             ORDER BY nama_pinjol ASC LIMIT 20',
+            'SELECT p.id_pinjol, p.nama_pinjol, p.status_pinjol, p.website, p.tahun_berdiri, p.alamat,
+                    COALESCE(AVG(u.rating), 0) AS rating_rata_rata,
+                    COUNT(u.id_ulasan) AS total_ulasan
+             FROM `pinjol` p
+             LEFT JOIN `ulasan` u ON p.id_pinjol = u.id_pinjol
+             WHERE p.nama_pinjol LIKE ?
+             GROUP BY p.id_pinjol, p.nama_pinjol, p.status_pinjol, p.website, p.tahun_berdiri, p.alamat
+             ORDER BY p.nama_pinjol ASC LIMIT 20',
             ["%{$nama}%"]
         );
 
@@ -111,8 +115,14 @@ class PinjolController
         $offset = ($page - 1) * $perPage;
         
         $data = $this->db->fetchAll(
-            "SELECT id_pinjol, nama_pinjol, tahun_berdiri, alamat, website, status_pinjol, created_at
-             FROM `pinjol` WHERE {$where} ORDER BY nama_pinjol ASC LIMIT $perPage OFFSET $offset",
+            "SELECT p.id_pinjol, p.nama_pinjol, p.tahun_berdiri, p.alamat, p.website, p.status_pinjol, p.created_at,
+                    COALESCE(AVG(u.rating), 0) AS rating_rata_rata,
+                    COUNT(u.id_ulasan) AS total_ulasan
+             FROM `pinjol` p
+             LEFT JOIN `ulasan` u ON p.id_pinjol = u.id_pinjol
+             WHERE {$where}
+             GROUP BY p.id_pinjol, p.nama_pinjol, p.tahun_berdiri, p.alamat, p.website, p.status_pinjol, p.created_at
+             ORDER BY p.nama_pinjol ASC LIMIT $perPage OFFSET $offset",
             $params
         );
 

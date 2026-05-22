@@ -42,7 +42,13 @@ class UlasanController
             $params[] = $pinjolId;
         }
 
-        $total = $this->db->count('ulasan u', $where, $params);
+        $countRow = $this->db->fetchOne(
+            "SELECT COUNT(*) AS total
+             FROM `ulasan` u
+             WHERE {$where}",
+            $params
+        );
+        $total = (int) ($countRow['total'] ?? 0);
 
         $data = $this->db->fetchAll(
             "SELECT u.*, p.nama_pinjol 

@@ -65,3 +65,27 @@ if (! function_exists('slugify')) {
         return trim($text, '-');
     }
 }
+
+if (! function_exists('isStrongPassword')) {
+    function isStrongPassword(string $password): bool {
+        return preg_match('/^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/', $password) === 1;
+    }
+}
+
+if (! function_exists('strongPasswordMessage')) {
+    function strongPasswordMessage(): string {
+        return 'Password harus minimal 8 karakter dan mengandung huruf besar, angka, serta karakter spesial.';
+    }
+}
+
+if (! function_exists('isValidPhoneNumber')) {
+    function isValidPhoneNumber(string $phone): bool {
+        return preg_match('/^\d{11,12}$/', $phone) === 1;
+    }
+}
+
+if (! function_exists('phoneNumberMessage')) {
+    function phoneNumberMessage(): string {
+        return 'No. HP harus berupa angka saja dengan panjang 11 sampai 12 digit.';
+    }
+}

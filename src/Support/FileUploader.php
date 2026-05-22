@@ -19,8 +19,7 @@ class FileUploader
         'png'  => 'image/png',
         'gif'  => 'image/gif',
         'webp' => 'image/webp',
-        'pdf'  => 'application/pdf',
-        'mp4'  => 'video/mp4',
+        'svg'  => 'image/svg+xml',
     ];
 
     /**
@@ -34,7 +33,7 @@ class FileUploader
         // Pastikan path menggunakan DIRECTORY_SEPARATOR agar aman di Mac/Linux
         $this->uploadPath = rtrim(dirname(__DIR__, 2) . '/' . $config->get('upload.path', 'storage/uploads'), '/');
         
-        $allowedExtensions = explode(',', (string) $config->get('upload.allowed_types', 'jpg,jpeg,png,pdf'));
+        $allowedExtensions = explode(',', (string) $config->get('upload.allowed_types', 'jpg,jpeg,png,gif,webp,svg'));
         
         $this->allowedTypes = array_filter(
             array_map(fn($ext) => self::MIME_WHITELIST[trim($ext)] ?? null, $allowedExtensions)

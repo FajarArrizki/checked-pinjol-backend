@@ -275,12 +275,22 @@ class AdminController
             'nama'     => 'required|min:3',
             'email'    => 'required|email',
             'username' => 'required|min:3',
-            'password' => 'required|min:6',
+            'password' => 'required',
             'role'     => 'required',
         ]);
 
         if (!empty($errors)) {
             return Response::error($errors[0], 422);
+        }
+
+        $password = (string) $request->input('password', '');
+        if (!isStrongPassword($password)) {
+            return Response::error(strongPasswordMessage(), 422);
+        }
+
+        $phone = trim((string) $request->input('no_hp', ''));
+        if ($phone !== '' && !isValidPhoneNumber($phone)) {
+            return Response::error(phoneNumberMessage(), 422);
         }
 
         if ($this->db->fetchOne('SELECT id_admin FROM `admin` WHERE email = ? OR username = ?', [
@@ -293,9 +303,9 @@ class AdminController
             'nama'          => sanitize((string)$request->input('nama')),
             'email'         => $request->input('email'),
             'username'      => $request->input('username'),
-            'password_hash' => password_hash((string)$request->input('password'), PASSWORD_BCRYPT),
+            'password_hash' => password_hash($password, PASSWORD_BCRYPT),
             'role'          => $request->input('role'),
-            'no_hp'         => $request->input('no_hp'),
+            'no_hp'         => $phone !== '' ? $phone : null,
             'is_active'     => 1,
             'created_at'    => date('Y-m-d H:i:s'),
             'updated_at'    => date('Y-m-d H:i:s'),
@@ -323,9 +333,8 @@ class AdminController
             new OA\Response(response: 404, description: 'Admin tidak ditemukan')
         ]
     )]
-    public function toggleAdmin(Request $request): Response
+    public function toggleAdmin(Request $request, string $id): Response
     {
-        $id    = $request->input('id');
         $admin = $this->db->fetchOne('SELECT * FROM `admin` WHERE id_admin = ?', [$id]);
         
         if (!$admin) return Response::notFound('Admin tidak ditemukan');
@@ -340,6 +349,26 @@ class AdminController
             ['is_active' => $newStatus],
             $newStatus ? 'Admin diaktifkan' : 'Admin dinonaktifkan'
         );
+    }
+
+    public function deleteAdmin(Request $request, string $id): Response
+    {
+        $id = (int) $id;
+        $auth = $request->user();
+
+        $admin = $this->db->fetchOne('SELECT id_admin, nama FROM `admin` WHERE id_admin = ?', [$id]);
+        if (!$admin) {
+            return Response::notFound('Admin tidak ditemukan');
+        }
+
+        if ((int) ($auth['id'] ?? 0) === $id) {
+            return Response::error('Akun superadmin yang sedang aktif tidak bisa dihapus', 422);
+        }
+
+        $this->db->delete('pengaturan_admin', 'id_admin = ?', [$id]);
+        $this->db->delete('admin', 'id_admin = ?', [$id]);
+
+        return Response::success(null, 'Admin berhasil dihapus');
     }
 
     #[OA\Get(

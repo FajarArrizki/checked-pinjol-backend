@@ -72,7 +72,7 @@ class ArtikelController
         $total = $this->db->count('artikel_edukasi', $where, $params);
 
         $data = $this->db->fetchAll(
-            "SELECT a.id_artikel, a.judul, a.slug, a.kategori, a.author, a.summary, 
+            "SELECT a.id_artikel, a.judul, a.slug, a.kategori, a.author, a.summary, a.isi_artikel,
                     a.gambar, a.status, a.published_at, a.created_at, a.updated_at,
                     adm.nama as nama_penulis
              FROM `artikel_edukasi` a

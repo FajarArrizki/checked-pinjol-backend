@@ -103,4 +103,5 @@ return static function (Router $router): void {
     $router->get('/api/admin/admins',              [AdminController::class, 'admins'], [SuperAdminMiddleware::class]);
     $router->post('/api/admin/admins',             [AdminController::class, 'createAdmin'], [SuperAdminMiddleware::class]);
     $router->patch('/api/admin/admins/:id/toggle', [AdminController::class, 'toggleAdmin'], [SuperAdminMiddleware::class]);
+    $router->delete('/api/admin/admins/:id',       [AdminController::class, 'deleteAdmin'], [SuperAdminMiddleware::class]);
 };

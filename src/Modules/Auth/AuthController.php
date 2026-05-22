@@ -221,12 +221,22 @@ class AuthController
         $errors = $request->validate([
             'nama'     => 'required|min:3|max:255',
             'email'    => 'required|email',
-            'no_hp'    => 'required|min:9|max:20',
-            'password' => 'required|min:6',
+            'no_hp'    => 'required',
+            'password' => 'required',
         ]);
 
         if (!empty($errors)) {
             return Response::error($errors[0], 422);
+        }
+
+        $phone = trim((string) $request->input('no_hp', ''));
+        if (!isValidPhoneNumber($phone)) {
+            return Response::error(phoneNumberMessage(), 422);
+        }
+
+        $password = (string) $request->input('password', '');
+        if (!isStrongPassword($password)) {
+            return Response::error(strongPasswordMessage(), 422);
         }
 
         if ($this->db->fetchOne('SELECT id_user FROM `user` WHERE email = ?', [$request->input('email')])) {
@@ -236,8 +246,8 @@ class AuthController
         $id = $this->db->insert('user', [
             'nama'          => sanitize($request->input('nama')),
             'email'         => $request->input('email'),
-            'no_hp'         => $request->input('no_hp'),
-            'password_hash' => bcryptHash($request->input('password')),
+            'no_hp'         => $phone,
+            'password_hash' => bcryptHash($password),
             'created_at'    => date('Y-m-d H:i:s'),
             'updated_at'    => date('Y-m-d H:i:s'),
         ]);
@@ -589,6 +599,11 @@ class AuthController
             return Response::error('Password lama tidak cocok', 400);
         }
 
+        $newPassword = (string) $request->input('password_baru', '');
+        if (!isStrongPassword($newPassword)) {
+            return Response::error(strongPasswordMessage(), 422);
+        }
+
         if ($isAdmin) {
             $settings = $this->db->fetchOne(
                 'SELECT two_factor_enabled, two_factor_secret FROM `pengaturan_admin` WHERE id_admin = ?',
@@ -609,7 +624,7 @@ class AuthController
         }
 
         $this->db->update($table, [
-            'password_hash' => bcryptHash($request->input('password_baru')),
+            'password_hash' => bcryptHash($newPassword),
             'updated_at'    => date('Y-m-d H:i:s'),
         ], "$pk = ?", [$auth['id']]);
 
