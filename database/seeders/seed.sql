@@ -1,6 +1,7 @@
 -- ============================================================
 -- Seeder: pinjol_db
--- Hanya seed admin dan superadmin baru
+-- Fresh seed: hanya admin dan superadmin
+-- User, laporan, pinjol, regulasi dikelola manual via app
 -- ============================================================
 
 USE `pinjol_db`;
@@ -9,44 +10,21 @@ SET FOREIGN_KEY_CHECKS = 0;
 DELETE FROM `lampiran_laporan`;
 DELETE FROM `laporan_regulasi`;
 DELETE FROM `laporan`;
+DELETE FROM `ulasan`;
+DELETE FROM `simulasi_pinjaman`;
+DELETE FROM `user`;
 DELETE FROM `pinjol`;
 DELETE FROM `regulasi_filter`;
-DELETE FROM `user`;
 DELETE FROM `admin`;
 SET FOREIGN_KEY_CHECKS = 1;
 
-ALTER TABLE `user` AUTO_INCREMENT = 1;
 ALTER TABLE `admin` AUTO_INCREMENT = 1;
+ALTER TABLE `user` AUTO_INCREMENT = 1;
 ALTER TABLE `pinjol` AUTO_INCREMENT = 1;
 ALTER TABLE `regulasi_filter` AUTO_INCREMENT = 1;
 ALTER TABLE `laporan` AUTO_INCREMENT = 1;
-
-INSERT INTO `user` (`id_user`, `nama`, `email`, `no_hp`, `password_hash`, `created_at`, `updated_at`) VALUES
-(1, 'User Demo', 'userdemo@pinjol.id', '081234567890', '$2y$12$0dzA9x6dVqN3Vf0m9uWZZ.oJz6zqG3R0mR0sR9P1o8WnZx0hYQ8iK', NOW(), NOW());
+ALTER TABLE `ulasan` AUTO_INCREMENT = 1;
 
 INSERT INTO `admin` (`id_admin`, `nama`, `email`, `username`, `password_hash`, `role`, `no_hp`, `is_active`, `created_at`, `updated_at`) VALUES
-(1, 'Admin Satu', 'admin1@pinjol.id', 'admin1', '$2y$12$H4d2XsSPrvJ8uxrO97jWI.MYtCUdCgpLENDURnc7JJbGam8kyYJ8m', 'admin', '08111000001', 1, NOW(), NOW()),
-(2, 'Super Admin', 'superadmin@pinjol.id', 'superadmin', '$2y$12$d287SqKqfL34BVqB6J1/s.swSOHlDwZXAQsK4ZLSNIRTE.2a7rVEC', 'superadmin', '08111000003', 1, NOW(), NOW());
-
-INSERT INTO `pinjol` (`id_pinjol`, `nama_pinjol`, `tahun_berdiri`, `alamat`, `website`, `status_pinjol`, `created_by`, `created_at`, `updated_at`) VALUES
-(1, 'KreditPintar', 2018, 'Jakarta', 'https://kreditpintar.com', 'legal', NULL, NOW(), NOW()),
-(2, 'AdaKami', 2016, 'Jakarta', 'https://adakami.id', 'legal', NULL, NOW(), NOW()),
-(3, 'PinjamCepat', NULL, NULL, NULL, 'ilegal', NULL, NOW(), NOW());
-
-INSERT INTO `regulasi_filter` (`id_regulasi`, `nama_kriteria`, `deskripsi`, `is_active`, `created_by`, `created_at`, `updated_at`) VALUES
-(1, 'Izin OJK Tidak Ditemukan', 'Aplikasi tidak terdaftar resmi di OJK.', 1, 1, NOW(), NOW()),
-(2, 'Bunga Tidak Wajar', 'Bunga pinjaman melebihi batas kewajaran.', 1, 1, NOW(), NOW());
-
-INSERT INTO `laporan` (`id_user`, `kode_laporan`, `judul_laporan`, `isi_laporan`, `nama_pelapor`, `kontak_pelapor`, `email_pelapor`, `tautan_aplikasi`, `foto_bukti`, `status_laporan`, `tanggal_lapor`, `id_pinjol`, `id_admin_penanggung_jawab`, `tanggapan_ojk`, `tanggal_tanggapan`, `created_at`, `updated_at`) VALUES
-(1, 'LAP-DEMO-001', 'Aplikasi Menagih di Luar Jam Wajar', '<p>Aplikasi melakukan penagihan di luar jam yang diperbolehkan dan mengirim pesan berulang.</p>', 'Budi Santoso', '081234567890', 'budi@example.com', 'https://play.google.com/store/apps/details?id=com.demo.pinjol', NULL, 'diproses', NOW(), 1, 1, '<p>Laporan sedang kami proses dan akan ditindaklanjuti.</p>', NOW(), NOW(), NOW()),
-(1, 'LAP-DEMO-002', 'Aplikasi Tidak Punya Izin Resmi', '<p>Aplikasi tidak ditemukan pada daftar penyelenggara berizin dan menggunakan metode penagihan agresif.</p>', 'Siti Aminah', '081298765432', 'siti@example.com', 'https://play.google.com/store/apps/details?id=com.ilegal.demo', NULL, 'menunggu', NOW(), 3, NULL, NULL, NULL, NOW(), NOW());
-
-INSERT INTO `lampiran_laporan` (`id_laporan`, `nama_file`, `file_path`, `tipe_file`, `ukuran_file`, `uploaded_at`) VALUES
-(1, 'bukti-chat-1.png', 'uploads/laporan/bukti-chat-1.png', 'image', 245120, NOW()),
-(1, 'bukti-penagihan.png', 'uploads/laporan/bukti-penagihan.png', 'image', 198432, NOW()),
-(2, 'bukti-izin.png', 'uploads/laporan/bukti-izin.png', 'image', 153220, NOW());
-
-INSERT INTO `laporan_regulasi` (`id_laporan`, `id_regulasi`, `catatan`) VALUES
-(1, 1, 'Bukti menunjukkan pelanggaran jam penagihan.'),
-(2, 1, 'Aplikasi tidak terdaftar pada daftar resmi.'),
-(2, 2, 'Pengguna menerima biaya tambahan tidak jelas.');
+(1, 'Admin Satu', 'admin1@pinjol.id', 'admin1', '$2y$12$XrvINoK2nMibzqaq91BSr.qGYmTLPaUmpELY.19ExfZ1Lg6921G7q', 'admin', '08111000001', 1, NOW(), NOW()),
+(2, 'Super Admin', 'superadmin@pinjol.id', 'superadmin', '$2y$12$dryiSe3aA6D1eCME39mld.JF0uyDwMdF05AWJU/glVrNUFYCrBPfK', 'superadmin', '08111000003', 1, NOW(), NOW());
