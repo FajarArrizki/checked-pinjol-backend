@@ -177,8 +177,8 @@ class ArtikelController
             'slug'        => $slug,
             'kategori'    => sanitize((string)$request->input('kategori')),
             'author'      => sanitize((string)$request->input('author')),
-            'summary'     => sanitize((string)$request->input('summary')),
-            'isi_artikel' => $request->input('isi_artikel'),
+            'summary'     => $request->input('summary'), // HTML dari Quill, jangan strip
+            'isi_artikel' => $request->input('isi_artikel'), // HTML dari Quill, jangan strip
             'gambar'      => $gambarPath,
             'status'      => $status,
             'created_at'  => date('Y-m-d H:i:s'),
@@ -259,7 +259,7 @@ class ArtikelController
         }
         if (isset($data['kategori'])) $data['kategori'] = sanitize((string)$data['kategori']);
         if (isset($data['author'])) $data['author'] = sanitize((string)$data['author']);
-        if (isset($data['summary'])) $data['summary'] = sanitize((string)$data['summary']);
+        // summary dan isi_artikel berisi HTML dari Quill, jangan strip
 
         // Set published_at when status changes to published
         if (isset($data['status']) && $data['status'] === 'published') {
