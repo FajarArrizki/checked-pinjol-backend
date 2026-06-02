@@ -53,7 +53,7 @@ if (! function_exists('paginate')) {
 if (! function_exists('sanitize')) {
     function sanitize($value): string {
         $value = (string) ($value ?? '');
-        return htmlspecialchars(strip_tags(trim($value)), ENT_QUOTES, 'UTF-8');
+        return strip_tags(trim($value));
     }
 }
 
