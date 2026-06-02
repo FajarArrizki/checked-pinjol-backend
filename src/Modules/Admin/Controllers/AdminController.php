@@ -29,7 +29,7 @@ class AdminController
         return Response::success([
             'overview' => [
                 'laporan_hari_ini' => $this->db->count('laporan', 'DATE(tanggal_lapor) = ?', [$today]),
-                'laporan_tertunda' => $this->db->count('laporan', 'status_laporan = ?', ['menunggu']),
+                'laporan_tertunda' => $this->db->count('laporan', 'status_laporan IN (?)', ['diproses']),
                 'aplikasi_baru_hari_ini' => $this->db->count('pinjol', 'DATE(created_at) = ?', [$today]),
                 'tindakan_selesai' => $this->db->count('laporan', 'status_laporan = ?', ['selesai']),
                 'tingkat_penyelesaian' => $this->calculateCompletionRate(),
@@ -42,7 +42,6 @@ class AdminController
             ],
             'total_laporan' => [
                 'semua'    => $this->db->count('laporan'),
-                'menunggu' => $this->db->count('laporan', 'status_laporan = ?', ['menunggu']),
                 'diproses' => $this->db->count('laporan', 'status_laporan = ?', ['diproses']),
                 'selesai'  => $this->db->count('laporan', 'status_laporan = ?', ['selesai']),
                 'ditolak'  => $this->db->count('laporan', 'status_laporan = ?', ['ditolak']),
