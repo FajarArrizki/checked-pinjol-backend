@@ -302,10 +302,11 @@ class LaporanController
     public function store(Request $request): Response
     {
         $errors = $request->validate([
-            'judul_laporan'  => 'required|min:5|max:255',
-            'isi_laporan'    => 'required|min:20',
-            'nama_pelapor'   => 'required',
-            'kontak_pelapor' => 'required',
+            'judul_laporan'    => 'required|min:5|max:255',
+            'isi_laporan'      => 'required|min:20',
+            'nama_pelapor'     => 'required',
+            'kontak_pelapor'   => 'required',
+            'tautan_aplikasi'  => 'required|url',
         ]);
 
         if (!empty($errors)) return Response::error($errors[0], 422);

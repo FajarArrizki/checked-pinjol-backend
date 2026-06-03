@@ -29,7 +29,7 @@ class AdminController
         return Response::success([
             'overview' => [
                 'laporan_hari_ini' => $this->db->count('laporan', 'DATE(tanggal_lapor) = ?', [$today]),
-                'laporan_tertunda' => $this->db->count('laporan', 'status_laporan IN (?)', ['diproses']),
+                'laporan_tertunda' => $this->db->count('laporan', 'status_laporan IN (?, ?)', ['diproses', 'menunggu']),
                 'aplikasi_baru_hari_ini' => $this->db->count('pinjol', 'DATE(created_at) = ?', [$today]),
                 'tindakan_selesai' => $this->db->count('laporan', 'status_laporan = ?', ['selesai']),
                 'tingkat_penyelesaian' => $this->calculateCompletionRate(),
@@ -42,7 +42,7 @@ class AdminController
             ],
             'total_laporan' => [
                 'semua'    => $this->db->count('laporan'),
-                'diproses' => $this->db->count('laporan', 'status_laporan = ?', ['diproses']),
+                'diproses' => $this->db->count('laporan', 'status_laporan IN (?, ?)', ['diproses', 'menunggu']),
                 'selesai'  => $this->db->count('laporan', 'status_laporan = ?', ['selesai']),
                 'ditolak'  => $this->db->count('laporan', 'status_laporan = ?', ['ditolak']),
             ],
@@ -108,8 +108,14 @@ class AdminController
         }
 
         if ($status !== '' && in_array($status, ['menunggu', 'diproses', 'selesai', 'ditolak'], true)) {
-            $where .= ' AND l.status_laporan = ?';
-            $params[] = $status;
+            if ($status === 'diproses') {
+                $where .= ' AND l.status_laporan IN (?, ?)';
+                $params[] = 'diproses';
+                $params[] = 'menunggu';
+            } else {
+                $where .= ' AND l.status_laporan = ?';
+                $params[] = $status;
+            }
         }
 
         $total = $this->db->fetchOne(
@@ -139,6 +145,11 @@ class AdminController
                 'per_page' => $perPage,
                 'total' => (int) ($total['total'] ?? 0),
                 'total_pages' => (int) max(1, ceil(((int) ($total['total'] ?? 0)) / $perPage)),
+                'status_counts' => [
+                    'diproses' => $this->db->count('laporan', 'status_laporan IN (?, ?)', ['diproses', 'menunggu']),
+                    'selesai'  => $this->db->count('laporan', 'status_laporan = ?', ['selesai']),
+                    'ditolak'  => $this->db->count('laporan', 'status_laporan = ?', ['ditolak']),
+                ],
             ],
         ]);
     }

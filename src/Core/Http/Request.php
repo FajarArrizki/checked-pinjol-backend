@@ -140,6 +140,9 @@ final class Request
                 if ($singleRule === 'email' && $value && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
                     $errors[] = "Format {$field} tidak valid.";
                 }
+                if ($singleRule === 'url' && $value && !filter_var($value, FILTER_VALIDATE_URL)) {
+                    $errors[] = "Format {$field} harus berupa URL yang valid (contoh: https://www.example.com).";
+                }
                 if (str_starts_with($singleRule, 'min:')) {
                     $min = (int) explode(':', $singleRule)[1];
                     if (strlen((string)$value) < $min) {
