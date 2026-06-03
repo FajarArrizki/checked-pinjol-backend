@@ -9,7 +9,7 @@ use App\Core\Http\Response;
 // 1. CORS INTERCEPTOR (Mencegat Preflight OPTIONS & Menyuntikkan Izin Browser)
 // ============================================================================
 if (isset($_SERVER['HTTP_ORIGIN'])) {
-    $allowedOrigins = ['http://localhost:5173']; // Origin frontend Vite React kamu
+    $allowedOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173'];
     
     if (in_array($_SERVER['HTTP_ORIGIN'], $allowedOrigins)) {
         header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
@@ -21,7 +21,7 @@ if (isset($_SERVER['HTTP_ORIGIN'])) {
 // Jika request adalah OPTIONS, langsung kunci di sini dan beri status 204 (No Content)
 if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD'])) {
-        header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+        header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
     }
     if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS'])) {
         header("Access-Control-Allow-Headers: {$_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']}");

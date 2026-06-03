@@ -35,7 +35,7 @@ final class CorsMiddleware
             $currentOrigin = $origin;
         }
 
-        $methods = $this->config->get('cors.allowed_methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        $methods = $this->config->get('cors.allowed_methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
         $headers = $this->config->get('cors.allowed_headers', 'Content-Type, Authorization, X-Requested-With');
 
         // 3. JIKA REQUEST ADALAH OPTIONS (Preflight dari Browser)
